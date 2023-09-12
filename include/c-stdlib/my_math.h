@@ -89,6 +89,14 @@ double round(double x);
 int isnan(double x);
 int isfinite(double x);
 double trunc(double x);
+long int lrint(double x);
+double floor(double x);
+double cbrt(double x);
+double fmod(double numer, double denom);
+double fmin(double x, double y);
+double fmax(double x, double y);
+double hypot(double x, double y);
+int signbit(double num);
 
 #ifdef __cplusplus
 }

@@ -56,23 +56,9 @@
  * compiler will convert from decimal to binary accurately enough
  * to produce the hexadecimal values shown.
  */
-
+#include "my_float.h"
+#include "my_math.h"
 #include <stdio.h>
-
-#include <float.h>
-
-#include "math_private.h"
-
-typedef union {
-    double value;
-    struct {
-        uint32_t lsw;
-        uint32_t msw;
-    } parts;
-    struct {
-        uint64_t w;
-    } xparts;
-} ieee_double_shape_type;
 
 double copysign(double x, double y) {
     uint32_t hx, hy;

@@ -1,11 +1,11 @@
-#ifndef LUA_C_STDLIB_SETJMP_H_
-#define LUA_C_STDLIB_SETJMP_H_
+#ifndef _STDLIB_SETJMP_H_
+#define _STDLIB_SETJMP_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <features.h>
+// #include <features.h>
 
 typedef unsigned long __jmp_buf[26];
 

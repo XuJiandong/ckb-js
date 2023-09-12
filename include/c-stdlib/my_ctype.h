@@ -1,5 +1,5 @@
-#ifndef LUA_C_STDLIB_CTYPE_H_
-#define LUA_C_STDLIB_CTYPE_H_
+#ifndef _STDLIB_CTYPE_H_
+#define _STDLIB_CTYPE_H_
 #ifdef __cplusplus
 extern "C" {
 #endif

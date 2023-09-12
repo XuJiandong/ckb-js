@@ -35,13 +35,8 @@
 // #include <time.h>
 // #include <fenv.h>
 #include "my_math.h"
-#if defined(__APPLE__)
-#include <malloc/malloc.h>
-#elif defined(__linux__)
-#include <malloc.h>
-#elif defined(__FreeBSD__)
-#include <malloc_np.h>
-#endif
+#include <string.h>
+#include "my_string.h"
 
 #include "cutils.h"
 #include "list.h"
@@ -16042,10 +16037,11 @@ static JSValue js_call_c_function(JSContext *ctx, JSValueConst func_obj,
     sf->cur_func = (JSValue)func_obj;
     sf->arg_count = argc;
     arg_buf = argv;
+    uint8_t temp[sizeof(arg_buf[0]) * arg_count];
 
     if (unlikely(argc < arg_count)) {
         /* ensure that at least argc_count arguments are readable */
-        arg_buf = alloca(sizeof(arg_buf[0]) * arg_count);
+        arg_buf = (JSValueConst *)temp;
         for(i = 0; i < argc; i++)
             arg_buf[i] = argv[i];
         for(i = argc; i < arg_count; i++)
@@ -16156,7 +16152,8 @@ static JSValue js_call_bound_function(JSContext *ctx, JSValueConst func_obj,
     arg_count = bf->argc + argc;
     if (js_check_stack_overflow(ctx->rt, sizeof(JSValue) * arg_count))
         return JS_ThrowStackOverflow(ctx);
-    arg_buf = alloca(sizeof(JSValue) * arg_count);
+    uint8_t temp[sizeof(JSValue) * arg_count];
+    arg_buf = (JSValueConst *)temp;
     for(i = 0; i < bf->argc; i++) {
         arg_buf[i] = bf->argv[i];
     }
@@ -16287,7 +16284,9 @@ static JSValue JS_CallInternal(JSContext *caller_ctx, JSValueConst func_obj,
     init_list_head(&sf->var_ref_list);
     var_refs = p->u.func.var_refs;
 
-    local_buf = alloca(alloca_size);
+    // TODO: fix it
+    uint8_t temp[1024*10];
+    local_buf = (JSValue *)temp;
     if (unlikely(arg_allocated_size)) {
         int n = min_int(argc, b->arg_count);
         arg_buf = local_buf;
@@ -41932,14 +41931,14 @@ static const JSCFunctionListEntry js_math_funcs[] = {
     JS_CFUNC_MAGIC_DEF("max", 2, js_math_min_max, 1 ),
     JS_CFUNC_SPECIAL_DEF("abs", 1, f_f, fabs ),
     JS_CFUNC_SPECIAL_DEF("floor", 1, f_f, floor ),
-    JS_CFUNC_SPECIAL_DEF("ceil", 1, f_f, ceil ),
+    // JS_CFUNC_SPECIAL_DEF("ceil", 1, f_f, ceil ),
     JS_CFUNC_SPECIAL_DEF("round", 1, f_f, js_math_round ),
     JS_CFUNC_SPECIAL_DEF("sqrt", 1, f_f, sqrt ),
 
     JS_CFUNC_SPECIAL_DEF("acos", 1, f_f, acos ),
     JS_CFUNC_SPECIAL_DEF("asin", 1, f_f, asin ),
-    JS_CFUNC_SPECIAL_DEF("atan", 1, f_f, atan ),
-    JS_CFUNC_SPECIAL_DEF("atan2", 2, f_f_f, atan2 ),
+    // JS_CFUNC_SPECIAL_DEF("atan", 1, f_f, atan ),
+    // JS_CFUNC_SPECIAL_DEF("atan2", 2, f_f_f, atan2 ),
     JS_CFUNC_SPECIAL_DEF("cos", 1, f_f, cos ),
     JS_CFUNC_SPECIAL_DEF("exp", 1, f_f, exp ),
     JS_CFUNC_SPECIAL_DEF("log", 1, f_f, log ),
@@ -41952,11 +41951,11 @@ static const JSCFunctionListEntry js_math_funcs[] = {
     JS_CFUNC_SPECIAL_DEF("cosh", 1, f_f, cosh ),
     JS_CFUNC_SPECIAL_DEF("sinh", 1, f_f, sinh ),
     JS_CFUNC_SPECIAL_DEF("tanh", 1, f_f, tanh ),
-    JS_CFUNC_SPECIAL_DEF("acosh", 1, f_f, acosh ),
-    JS_CFUNC_SPECIAL_DEF("asinh", 1, f_f, asinh ),
-    JS_CFUNC_SPECIAL_DEF("atanh", 1, f_f, atanh ),
-    JS_CFUNC_SPECIAL_DEF("expm1", 1, f_f, expm1 ),
-    JS_CFUNC_SPECIAL_DEF("log1p", 1, f_f, log1p ),
+    // JS_CFUNC_SPECIAL_DEF("acosh", 1, f_f, acosh ),
+    // JS_CFUNC_SPECIAL_DEF("asinh", 1, f_f, asinh ),
+    // JS_CFUNC_SPECIAL_DEF("atanh", 1, f_f, atanh ),
+    // JS_CFUNC_SPECIAL_DEF("expm1", 1, f_f, expm1 ),
+    // JS_CFUNC_SPECIAL_DEF("log1p", 1, f_f, log1p ),
     JS_CFUNC_SPECIAL_DEF("log2", 1, f_f, log2 ),
     JS_CFUNC_SPECIAL_DEF("log10", 1, f_f, log10 ),
     JS_CFUNC_SPECIAL_DEF("cbrt", 1, f_f, cbrt ),

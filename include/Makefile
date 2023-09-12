@@ -5,4 +5,4 @@ STYLE := "{BasedOnStyle: Google, TabWidth: 4, IndentWidth: 4, UseTab: Never, Sor
 fmt:
 	clang-format -i -style=$(STYLE) *.c *.h 
 	clang-format -i -style=$(STYLE) c-stdlib/*.h 
-	clang-format -i -style=$(STYLE) c-stdlib/src/*.c c-stdlib/src/*.h
+	clang-format -i -style=$(STYLE) c-stdlib/src/*.c

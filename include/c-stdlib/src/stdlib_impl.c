@@ -1,17 +1,12 @@
 #include <limits.h>
-#include <locale.h>
-#include <math.h>
-#include <setjmp.h>
+#include "my_math.h"
+#include "my_setjmp.h"
+#include "my_locale.h"
 #include <stdint.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
-
-#include "printf_impl.h"
-#include "malloc_impl.h"
-#include "mocked_stdio_impl.h"
-#include "mocked_math_impl.h"
 
 #define CKB_SS (sizeof(size_t))
 #define CKB_ALIGN (sizeof(size_t) - 1)
@@ -895,6 +890,17 @@ done:
     return value * sign;
 }
 
-void exit(int status) { ckb_exit(status); }
+void ckb_exit(int);
 
+void exit(int status) { ckb_exit(status); }
 void abort(void) { ckb_exit(-1); }
+
+char *strrchr(char *str, int character) {
+    ckb_exit(-1);
+    return NULL;
+}
+
+char *strcat(char *destination, const char *source) {
+    ckb_exit(-1);
+    return destination;
+}

@@ -1,5 +1,5 @@
-#ifndef LUA_C_STDLIB_ERRNO_H_
-#define LUA_C_STDLIB_ERRNO_H_
+#ifndef _STDLIB_ERRNO_H_
+#define _STDLIB_ERRNO_H_
 
 #ifdef __cplusplus
 extern "C" {

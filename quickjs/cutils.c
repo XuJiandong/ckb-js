@@ -23,9 +23,12 @@
  * THE SOFTWARE.
  */
 #include <stdlib.h>
+#include "my_stdlib.h"
 #include <stdio.h>
+#include "my_stdio.h"
 #include <stdarg.h>
 #include <string.h>
+#include "my_string.h"
 
 #include "cutils.h"
 

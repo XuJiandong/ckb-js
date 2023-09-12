@@ -1,5 +1,25 @@
-#ifndef MATH_PRIVATE_H
-#define MATH_PRIVATE_H
+#ifndef _STDLIB_FLOAT_H_
+#define _STDLIB_FLOAT_H_
+
+#include <stdint.h>
+
+#undef FLT_MAX
+#undef DBL_MAX
+#undef LDBL_MAX
+#define FLT_MAX __FLT_MAX__
+#define DBL_MAX __DBL_MAX__
+#define LDBL_MAX __LDBL_MAX__
+
+typedef union {
+    double value;
+    struct {
+        uint32_t lsw;
+        uint32_t msw;
+    } parts;
+    struct {
+        uint64_t w;
+    } xparts;
+} ieee_double_shape_type;
 
 /* Get two 32 bit ints from a double.  */
 

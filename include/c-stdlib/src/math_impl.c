@@ -1,9 +1,6 @@
 #include "../my_math.h"
 #include <stdint.h>
 
-#include "math_pow.c"
-#include "math_log.c"
-
 #ifndef DBL_EPSILON
 #define DBL_EPSILON 2.22044604925031308085e-16
 #endif
@@ -93,3 +90,17 @@ double sqrt(double x) { return 0; }
 double tan(double x) { return 0; }
 
 double tanh(double x) { return 0; }
+
+long int lrint(double x) { return 0; }
+
+double cbrt(double x) { return 0; }
+
+double fmod(double numer, double denom) { return 0; }
+
+double fmin(double x, double y) { return x > y ? y : x; }
+
+double fmax(double x, double y) { return x < y ? y : x; }
+
+double hypot(double x, double y) { return 0; }
+
+int signbit(double num) { return num > 0; }

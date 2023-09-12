@@ -1,6 +1,3 @@
-#ifndef LUA_C_STDLIB_PRINTF_H_
-#define LUA_C_STDLIB_PRINTF_H_
-
 #undef CKB_C_STDLIB_PRINTF
 #define CKB_MALLOC_DECLARATION_ONLY 1
 
@@ -9,8 +6,10 @@
 
 #include <stdarg.h>
 #include <stddef.h>
+#include "my_stddef.h"
 #include <stdbool.h>
 #include <stdint.h>
+#include "my_float.h"
 
 /**
  * Output a character to a custom device like UART, used by the printf()
@@ -188,9 +187,9 @@ int fctprintf(void (*out)(char character, void *arg), void *arg,
 #define FLAGS_ADAPT_EXP (1U << 11U)
 
 // import float.h for DBL_MAX
-#if defined(PRINTF_SUPPORT_FLOAT)
-#include <float.h>
-#endif
+// #if defined(PRINTF_SUPPORT_FLOAT)
+// #include <float.h>
+// #endif
 
 // output function type
 typedef void (*out_fct_type)(char character, void *buffer, size_t idx,
@@ -1066,5 +1065,3 @@ int ckb_printf(const char *format, ...) {
     ckb_debug(buf);
     return ret;
 }
-
-#endif

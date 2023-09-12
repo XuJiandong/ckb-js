@@ -1,19 +1,8 @@
-#ifndef LUA_C_STDLIB_MALLOC_H_
-#define LUA_C_STDLIB_MALLOC_H_
-
 #define CKB_MALLOC_DECLARATION_ONLY 1
-
-#if defined(malloc)
-#undef malloc
-#endif
-
-#if defined(realloc)
-#undef realloc
-#endif
-
-#if defined(free)
-#undef free
-#endif
+#include <stdlib.h>
+#include <stdio.h>
+#include <stdint.h>
+#include <memory.h>
 
 #ifndef CKB_BRK_MIN
 extern char _end[]; /* _end is set in the linker */
@@ -398,5 +387,3 @@ void free(void *p) {
     struct chunk *self = CKB_MEM_TO_CHUNK(p);
     __bin_chunk(self);
 }
-
-#endif

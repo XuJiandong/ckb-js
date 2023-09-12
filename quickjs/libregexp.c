@@ -22,11 +22,15 @@
  * THE SOFTWARE.
  */
 #include <stdlib.h>
+#include "my_stdlib.h"
 #include <stdio.h>
+#include "my_stdio.h"
 #include <stdarg.h>
-#include <inttypes.h>
+// #include <inttypes.h>
+#include <stdint.h>
 #include <string.h>
-#include <assert.h>
+#include "my_string.h"
+#include "my_assert.h"
 
 #include "cutils.h"
 #include "libregexp.h"
@@ -2527,7 +2531,8 @@ int lre_exec(uint8_t **capture,
     for(i = 0; i < s->capture_count * 2; i++)
         capture[i] = NULL;
     alloca_size = s->stack_size_max * sizeof(stack_buf[0]);
-    stack_buf = alloca(alloca_size);
+    uint8_t temp[alloca_size];
+    stack_buf = (StackInt *)temp;
     ret = lre_exec_backtrack(s, capture, stack_buf, 0, bc_buf + RE_HEADER_LEN,
                              cbuf + (cindex << cbuf_type), FALSE);
     lre_realloc(s->opaque, s->state_stack, 0);
