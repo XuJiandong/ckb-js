@@ -11,10 +11,10 @@ CFLAGS += -DCKB_DECLARATION_ONLY
 CFLAGS += -g -O3 \
 		-Wall -Werror -Wno-nonnull -Wno-unused-function \
 		-fno-builtin-printf -fno-builtin-memcmp \
-		-nostdinc -nostdlib -fvisibility=hidden \
+		-nostdinc -nostdlib\
 		-fdata-sections -ffunction-sections
 
-CFLAGS += -I deps/ckb-c-stdlib/libc
+CFLAGS += -I deps/ckb-c-stdlib/libc -I deps/ckb-c-stdlib
 CFLAGS += -I include -I include/c-stdlib
 
 CFLAGS += -Wextra -Wno-sign-compare -Wno-missing-field-initializers -Wundef -Wuninitialized\
@@ -23,18 +23,23 @@ CFLAGS += -Wextra -Wno-sign-compare -Wno-missing-field-initializers -Wundef -Wun
 CFLAGS += -Wno-incompatible-library-redeclaration -Wno-implicit-const-int-float-conversion -Wno-invalid-noreturn
 
 CFLAGS += -D__BYTE_ORDER=1234 -D__LITTLE_ENDIAN=1234 -D__ISO_C_VISIBLE=1999 -D__GNU_VISIBLE
+CFLAGS += -DCKB_MALLOC_DECLARATION_ONLY -DCKB_PRINTF_DECLARATION_ONLY
 
-LDFLAGS := -static -Wl,--gc-sections
+LDFLAGS := -static --gc-sections
 
 OBJDIR=build
 
 QJS_OBJS=$(OBJDIR)/qjs.o $(OBJDIR)/quickjs.o $(OBJDIR)/libregexp.o $(OBJDIR)/libunicode.o \
 		$(OBJDIR)/cutils.o $(OBJDIR)/mocked.o
 
-STD_OBJS=$(OBJDIR)/stdlib_impl.o $(OBJDIR)/malloc_impl.o $(OBJDIR)/math_impl.o \
-		$(OBJDIR)/math_log_impl.o $(OBJDIR)/math_pow_impl.o $(OBJDIR)/printf_impl.o $(OBJDIR)/stdio_impl.o
+STD_OBJS=$(OBJDIR)/string_impl.o $(OBJDIR)/malloc_impl.o $(OBJDIR)/math_impl.o \
+		$(OBJDIR)/math_log_impl.o $(OBJDIR)/math_pow_impl.o $(OBJDIR)/printf_impl.o $(OBJDIR)/stdio_impl.o \
+		$(OBJDIR)/locale_impl.o
 
-all: $(STD_OBJS) $(QJS_OBJS)
+all: build/ckb-js
+
+build/ckb-js: $(STD_OBJS) $(QJS_OBJS) $(OBJDIR)/impl.o
+	$(LD) $(LDFLAGS) -o $@ $^
 
 $(OBJDIR)/%.o: quickjs/%.c
 	$(CC) $(CFLAGS) -c -o $@ $<
@@ -47,5 +52,7 @@ $(OBJDIR)/impl.o: deps/ckb-c-stdlib/libc/src/impl.c
 
 clean:
 	rm -f build/*.o	
+	rm -f build/ckb-js
+
 
 .phony: all clean

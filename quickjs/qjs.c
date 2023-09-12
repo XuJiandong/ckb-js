@@ -30,6 +30,7 @@
 #include <stddef.h>
 #include "cutils.h"
 #include "quickjs-libc.h"
+#include "ckb_syscalls.h"
 
 extern const uint8_t qjsc_repl[];
 extern const uint32_t qjsc_repl_size;
@@ -53,7 +54,7 @@ static int eval_buf(JSContext *ctx, const void *buf, int buf_len,
         val = JS_Eval(ctx, buf, buf_len, filename, eval_flags);
     }
     if (JS_IsException(val)) {
-        js_std_dump_error(ctx);
+        // js_std_dump_error(ctx);
         ret = -1;
     } else {
         ret = 0;
@@ -70,8 +71,9 @@ static JSContext *JS_NewCustomContext(JSRuntime *rt)
     if (!ctx)
         return NULL;
     /* system modules */
-    js_init_module_std(ctx, "std");
-    js_init_module_os(ctx, "os");
+    // TODO
+    // js_init_module_std(ctx, "std");
+    // js_init_module_os(ctx, "os");
     return ctx;
 }
 
@@ -215,8 +217,9 @@ int main(int argc, char **argv)
         JS_SetMemoryLimit(rt, memory_limit);
     if (stack_size != 0)
         JS_SetMaxStackSize(rt, stack_size);
-    js_std_set_worker_new_context_func(JS_NewCustomContext);
-    js_std_init_handlers(rt);
+    // TODO:
+    // js_std_set_worker_new_context_func(JS_NewCustomContext);
+    // js_std_init_handlers(rt);
     ctx = JS_NewCustomContext(rt);
     if (!ctx) {
         printf("qjs: cannot allocate JS context\n");
@@ -232,19 +235,22 @@ int main(int argc, char **argv)
     }
     
     if (!empty_run) {
-        js_std_add_helpers(ctx, argc - optind, argv + optind);
+        // TODO:
+        // js_std_add_helpers(ctx, argc - optind, argv + optind);
 
         if (expr) {
             if (eval_buf(ctx, expr, strlen(expr), "<cmdline>", 0))
                 goto fail;
         }
-    }    
-    js_std_free_handlers(rt);
+    }
+    // TODO:
+    // js_std_free_handlers(rt);
     JS_FreeContext(ctx);
     JS_FreeRuntime(rt);
     return 0;
  fail:
-    js_std_free_handlers(rt);
+    // TODO:
+    // js_std_free_handlers(rt);
     JS_FreeContext(ctx);
     JS_FreeRuntime(rt);
     return 1;

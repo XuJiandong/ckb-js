@@ -8,6 +8,8 @@
 #include <stddef.h>
 #include <string.h>
 
+int ckb_exit(int8_t code);
+
 #define CKB_SS (sizeof(size_t))
 #define CKB_ALIGN (sizeof(size_t) - 1)
 #define CKB_ONES ((size_t)-1 / UCHAR_MAX)
@@ -261,37 +263,6 @@ char *strstr(const char *h, const char *n) {
     return twoway_strstr((void *)h, (void *)n);
 }
 
-static const struct lconv posix_lconv = {
-    .decimal_point = ".",
-    .thousands_sep = "",
-    .grouping = "",
-    .int_curr_symbol = "",
-    .currency_symbol = "",
-    .mon_decimal_point = "",
-    .mon_thousands_sep = "",
-    .mon_grouping = "",
-    .positive_sign = "",
-    .negative_sign = "",
-    .int_frac_digits = CHAR_MAX,
-    .frac_digits = CHAR_MAX,
-    .p_cs_precedes = CHAR_MAX,
-    .p_sep_by_space = CHAR_MAX,
-    .n_cs_precedes = CHAR_MAX,
-    .n_sep_by_space = CHAR_MAX,
-    .p_sign_posn = CHAR_MAX,
-    .n_sign_posn = CHAR_MAX,
-    .int_p_cs_precedes = CHAR_MAX,
-    .int_p_sep_by_space = CHAR_MAX,
-    .int_n_cs_precedes = CHAR_MAX,
-    .int_n_sep_by_space = CHAR_MAX,
-    .int_p_sign_posn = CHAR_MAX,
-    .int_n_sign_posn = CHAR_MAX,
-};
-
-struct lconv *localeconv(void) {
-    return (void *)&posix_lconv;
-}
-
 /* Copied from
  * https://github.com/bminor/musl/blob/46d1c7801bb509e1097e8fadbaf359367fa4ef0b/src/setjmp/riscv64/setjmp.S
  */
@@ -359,100 +330,6 @@ __attribute__((naked)) void _longjmp(jmp_buf b, int n) {
         "seqz a0, a1\n"
         "add a0, a0, a1\n"
         "ret\n");
-}
-
-int abs(int a) { return a > 0 ? a : -a; }
-
-double frexp(double x, int *e) {
-    union {
-        double d;
-        uint64_t i;
-    } y = {x};
-    int ee = y.i >> 52 & 0x7ff;
-
-    if (!ee) {
-        if (x) {
-            x = frexp(x * 0x1p64, e);
-            *e -= 64;
-        } else
-            *e = 0;
-        return x;
-    } else if (ee == 0x7ff) {
-        return x;
-    }
-
-    *e = ee - 0x3fe;
-    y.i &= 0x800fffffffffffffull;
-    y.i |= 0x3fe0000000000000ull;
-    return y.d;
-}
-
-double fmod(double x, double y) {
-    union {
-        double f;
-        uint64_t i;
-    } ux = {x}, uy = {y};
-    int ex = ux.i >> 52 & 0x7ff;
-    int ey = uy.i >> 52 & 0x7ff;
-    int sx = ux.i >> 63;
-    uint64_t i;
-
-    /* in the followings uxi should be ux.i, but then gcc wrongly adds */
-    /* float load/store to inner loops ruining performance and code size */
-    uint64_t uxi = ux.i;
-
-    if (uy.i << 1 == 0 || __builtin_isnan(y) || ex == 0x7ff)
-        return (x * y) / (x * y);
-    if (uxi << 1 <= uy.i << 1) {
-        if (uxi << 1 == uy.i << 1) return 0 * x;
-        return x;
-    }
-
-    /* normalize x and y */
-    if (!ex) {
-        for (i = uxi << 12; i >> 63 == 0; ex--, i <<= 1)
-            ;
-        uxi <<= -ex + 1;
-    } else {
-        uxi &= -1ULL >> 12;
-        uxi |= 1ULL << 52;
-    }
-    if (!ey) {
-        for (i = uy.i << 12; i >> 63 == 0; ey--, i <<= 1)
-            ;
-        uy.i <<= -ey + 1;
-    } else {
-        uy.i &= -1ULL >> 12;
-        uy.i |= 1ULL << 52;
-    }
-
-    /* x mod y */
-    for (; ex > ey; ex--) {
-        i = uxi - uy.i;
-        if (i >> 63 == 0) {
-            if (i == 0) return 0 * x;
-            uxi = i;
-        }
-        uxi <<= 1;
-    }
-    i = uxi - uy.i;
-    if (i >> 63 == 0) {
-        if (i == 0) return 0 * x;
-        uxi = i;
-    }
-    for (; uxi >> 52 == 0; uxi <<= 1, ex--)
-        ;
-
-    /* scale result */
-    if (ex > 0) {
-        uxi -= 1ULL << 52;
-        uxi |= (uint64_t)ex << 52;
-    } else {
-        uxi >>= -ex + 1;
-    }
-    uxi |= (uint64_t)sx << 63;
-    ux.i = uxi;
-    return ux.f;
 }
 
 int strcoll(const char *l, const char *r) { return strcmp(l, r); }
@@ -890,17 +767,20 @@ done:
     return value * sign;
 }
 
-void ckb_exit(int);
-
 void exit(int status) { ckb_exit(status); }
 void abort(void) { ckb_exit(-1); }
 
-char *strrchr(char *str, int character) {
-    ckb_exit(-1);
-    return NULL;
+static void *__memrchr(const void *m, int c, size_t n) {
+    const unsigned char *s = m;
+    c = (unsigned char)c;
+    while (n--)
+        if (s[n] == c) return (void *)(s + n);
+    return 0;
 }
 
-char *strcat(char *destination, const char *source) {
-    ckb_exit(-1);
-    return destination;
+char *strrchr(char *s, int c) { return __memrchr(s, c, strlen(s) + 1); }
+
+char *strcat(char *dest, const char *src) {
+    strcpy(dest + strlen(dest), src);
+    return dest;
 }
