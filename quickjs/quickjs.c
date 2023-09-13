@@ -48210,7 +48210,8 @@ static JSValue get_date_string(JSContext *ctx, JSValueConst this_val,
 static int64_t date_now(void) {
     struct timeval tv;
     gettimeofday(&tv, NULL);
-    return (int64_t)tv.tv_sec * 1000 + (tv.tv_usec / 1000);
+    // return (int64_t)tv.tv_sec * 1000 + (tv.tv_usec / 1000);
+    return 0;
 }
 
 static JSValue js_date_constructor(JSContext *ctx, JSValueConst new_target,

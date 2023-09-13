@@ -1,3 +1,4 @@
+#define DOUBLE_PRECISION
 #include "fp_lib.h"
 
 COMPILER_RT_ABI du_int __fixunsdfdi(double a) {

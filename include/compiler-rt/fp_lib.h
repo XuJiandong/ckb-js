@@ -29,6 +29,8 @@
 #define UINT8_C(c) c
 #define UINT16_C(c) c
 #define UINT32_C(c) c##U
+#define INT64_C(c) c##L
+
 #define clzsi __builtin_clz
 typedef int32_t si_int;
 typedef uint32_t su_int;
@@ -42,6 +44,29 @@ typedef uint64_t du_int;
 
 #define UINT64_C(c) (c##ULL)
 #define crt_isnan(x) __builtin_isnan((x))
+
+#if defined SINGLE_PRECISION
+
+typedef uint16_t half_rep_t;
+typedef uint32_t rep_t;
+typedef uint64_t twice_rep_t;
+typedef int32_t srep_t;
+typedef float fp_t;
+#define HALF_REP_C UINT16_C
+#define REP_C UINT32_C
+#define significandBits 23
+
+static __inline int rep_clz(rep_t a) { return clzsi(a); }
+
+// 32x32 --> 64 bit multiply
+static __inline void wideMultiply(rep_t a, rep_t b, rep_t *hi, rep_t *lo) {
+    const uint64_t product = (uint64_t)a * b;
+    *hi = product >> 32;
+    *lo = product;
+}
+COMPILER_RT_ABI fp_t __addsf3(fp_t a, fp_t b);
+
+#elif defined DOUBLE_PRECISION
 
 typedef uint32_t half_rep_t;
 typedef uint64_t rep_t;
@@ -86,6 +111,110 @@ static __inline void wideMultiply(rep_t a, rep_t b, rep_t *hi, rep_t *lo) {
 
 COMPILER_RT_ABI fp_t __adddf3(fp_t a, fp_t b);
 
+#elif defined QUAD_PRECISION
+#if __LDBL_MANT_DIG__ == 113 && defined(__SIZEOF_INT128__)
+#define CRT_LDBL_128BIT
+typedef uint64_t half_rep_t;
+typedef __uint128_t rep_t;
+typedef __int128_t srep_t;
+typedef long double fp_t;
+#define HALF_REP_C UINT64_C
+#define REP_C (__uint128_t)
+// Note: Since there is no explicit way to tell compiler the constant is a
+// 128-bit integer, we let the constant be casted to 128-bit integer
+#define significandBits 112
+
+static __inline int rep_clz(rep_t a) {
+    const union {
+        __uint128_t ll;
+#ifdef _YUGA_BIG_ENDIAN
+        struct {
+            uint64_t high, low;
+        } s;
+#else
+        struct {
+            uint64_t low, high;
+        } s;
+#endif
+    } uu = {.ll = a};
+
+    uint64_t word;
+    uint64_t add;
+
+    if (uu.s.high) {
+        word = uu.s.high;
+        add = 0;
+    } else {
+        word = uu.s.low;
+        add = 64;
+    }
+    return __builtin_clzll(word) + add;
+}
+
+#define Word_LoMask UINT64_C(0x00000000ffffffff)
+#define Word_HiMask UINT64_C(0xffffffff00000000)
+#define Word_FullMask UINT64_C(0xffffffffffffffff)
+#define Word_1(a) (uint64_t)((a >> 96) & Word_LoMask)
+#define Word_2(a) (uint64_t)((a >> 64) & Word_LoMask)
+#define Word_3(a) (uint64_t)((a >> 32) & Word_LoMask)
+#define Word_4(a) (uint64_t)(a & Word_LoMask)
+
+// 128x128 -> 256 wide multiply for platforms that don't have such an operation;
+// many 64-bit platforms have this operation, but they tend to have hardware
+// floating-point, so we don't bother with a special case for them here.
+static __inline void wideMultiply(rep_t a, rep_t b, rep_t *hi, rep_t *lo) {
+    const uint64_t product11 = Word_1(a) * Word_1(b);
+    const uint64_t product12 = Word_1(a) * Word_2(b);
+    const uint64_t product13 = Word_1(a) * Word_3(b);
+    const uint64_t product14 = Word_1(a) * Word_4(b);
+    const uint64_t product21 = Word_2(a) * Word_1(b);
+    const uint64_t product22 = Word_2(a) * Word_2(b);
+    const uint64_t product23 = Word_2(a) * Word_3(b);
+    const uint64_t product24 = Word_2(a) * Word_4(b);
+    const uint64_t product31 = Word_3(a) * Word_1(b);
+    const uint64_t product32 = Word_3(a) * Word_2(b);
+    const uint64_t product33 = Word_3(a) * Word_3(b);
+    const uint64_t product34 = Word_3(a) * Word_4(b);
+    const uint64_t product41 = Word_4(a) * Word_1(b);
+    const uint64_t product42 = Word_4(a) * Word_2(b);
+    const uint64_t product43 = Word_4(a) * Word_3(b);
+    const uint64_t product44 = Word_4(a) * Word_4(b);
+
+    const __uint128_t sum0 = (__uint128_t)product44;
+    const __uint128_t sum1 = (__uint128_t)product34 + (__uint128_t)product43;
+    const __uint128_t sum2 = (__uint128_t)product24 + (__uint128_t)product33 +
+                             (__uint128_t)product42;
+    const __uint128_t sum3 = (__uint128_t)product14 + (__uint128_t)product23 +
+                             (__uint128_t)product32 + (__uint128_t)product41;
+    const __uint128_t sum4 = (__uint128_t)product13 + (__uint128_t)product22 +
+                             (__uint128_t)product31;
+    const __uint128_t sum5 = (__uint128_t)product12 + (__uint128_t)product21;
+    const __uint128_t sum6 = (__uint128_t)product11;
+
+    const __uint128_t r0 =
+        (sum0 & Word_FullMask) + ((sum1 & Word_LoMask) << 32);
+    const __uint128_t r1 = (sum0 >> 64) + ((sum1 >> 32) & Word_FullMask) +
+                           (sum2 & Word_FullMask) +
+                           ((sum3 << 32) & Word_HiMask);
+
+    *lo = r0 + (r1 << 64);
+    *hi = (r1 >> 64) + (sum1 >> 96) + (sum2 >> 64) + (sum3 >> 32) + sum4 +
+          (sum5 << 32) + (sum6 << 64);
+}
+#undef Word_1
+#undef Word_2
+#undef Word_3
+#undef Word_4
+#undef Word_HiMask
+#undef Word_LoMask
+#undef Word_FullMask
+#endif  // __LDBL_MANT_DIG__ == 113 && __SIZEOF_INT128__
+#else
+#error SINGLE_PRECISION, DOUBLE_PRECISION or QUAD_PRECISION must be defined.
+#endif
+
+#if defined(SINGLE_PRECISION) || defined(DOUBLE_PRECISION) || \
+    defined(CRT_LDBL_128BIT)
 #define typeWidth (sizeof(rep_t) * CHAR_BIT)
 #define exponentBits (typeWidth - significandBits - 1)
 #define maxExponent ((1 << exponentBits) - 1)
@@ -228,6 +357,29 @@ static __inline fp_t __compiler_rt_fmaxX(fp_t x, fp_t y) {
     return (crt_isnan(x) || x < y) ? y : x;
 }
 
+#endif
+
+#if defined(SINGLE_PRECISION)
+
+static __inline fp_t __compiler_rt_logbf(fp_t x) {
+    return __compiler_rt_logbX(x);
+}
+static __inline fp_t __compiler_rt_scalbnf(fp_t x, int y) {
+    return __compiler_rt_scalbnX(x, y);
+}
+static __inline fp_t __compiler_rt_fmaxf(fp_t x, fp_t y) {
+#if defined(__aarch64__)
+    // Use __builtin_fmaxf which turns into an fmaxnm instruction on AArch64.
+    return __builtin_fmaxf(x, y);
+#else
+    // __builtin_fmaxf frequently turns into a libm call, so inline the
+    // function.
+    return __compiler_rt_fmaxX(x, y);
+#endif
+}
+
+#elif defined(DOUBLE_PRECISION)
+
 static __inline fp_t __compiler_rt_logb(fp_t x) {
     return __compiler_rt_logbX(x);
 }
@@ -243,5 +395,33 @@ static __inline fp_t __compiler_rt_fmax(fp_t x, fp_t y) {
     return __compiler_rt_fmaxX(x, y);
 #endif
 }
+
+#elif defined(QUAD_PRECISION)
+
+#if defined(CRT_LDBL_128BIT)
+static __inline fp_t __compiler_rt_logbl(fp_t x) {
+    return __compiler_rt_logbX(x);
+}
+static __inline fp_t __compiler_rt_scalbnl(fp_t x, int y) {
+    return __compiler_rt_scalbnX(x, y);
+}
+static __inline fp_t __compiler_rt_fmaxl(fp_t x, fp_t y) {
+    return __compiler_rt_fmaxX(x, y);
+}
+#else
+// The generic implementation only works for ieee754 floating point. For other
+// floating point types, continue to rely on the libm implementation for now.
+static __inline long double __compiler_rt_logbl(long double x) {
+    return crt_logbl(x);
+}
+static __inline long double __compiler_rt_scalbnl(long double x, int y) {
+    return crt_scalbnl(x, y);
+}
+static __inline long double __compiler_rt_fmaxl(long double x, long double y) {
+    return crt_fmaxl(x, y);
+}
+#endif  // CRT_LDBL_128BIT
+
+#endif  // *_PRECISION
 
 #endif  // FP_LIB_HEADER

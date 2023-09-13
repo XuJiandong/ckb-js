@@ -10,6 +10,7 @@
 // (to nearest, ties to even).
 //
 //===----------------------------------------------------------------------===//
+#define DOUBLE_PRECISION
 
 #include "fp_lib.h"
 
@@ -178,4 +179,5 @@ COMPILER_RT_ABI fp_t __subdf3(fp_t a, fp_t b) {
     return __adddf3(a, fromRep(toRep(b) ^ signBit));
 }
 
+// TODO:
 COMPILER_RT_ABI fp_t __addtf3(fp_t a, fp_t b) { return __addXf3__(a, b); }
