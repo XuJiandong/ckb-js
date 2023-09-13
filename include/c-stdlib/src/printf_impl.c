@@ -38,8 +38,7 @@ int printf_(const char *format, ...);
  * characters that are WRITTEN into the buffer, not counting the terminating
  * null character
  */
-#define sprintf sprintf_
-int sprintf_(char *buffer, const char *format, ...);
+int sprintf(char *buffer, const char *format, ...);
 
 /**
  * Tiny snprintf/vsnprintf implementation
@@ -52,8 +51,6 @@ int sprintf_(char *buffer, const char *format, ...);
  * than count indicates truncation. Only when the returned value is non-negative
  * and less than count, the string has been completely written.
  */
-#define snprintf snprintf_
-#define vsnprintf vsnprintf_
 int snprintf_(char *buffer, size_t count, const char *format, ...);
 int vsnprintf_(char *buffer, size_t count, const char *format, va_list va);
 
@@ -256,7 +253,7 @@ static inline unsigned int _strnlen_s(const char *str, size_t maxsize) {
 static inline bool _is_digit(char ch) { return (ch >= '0') && (ch <= '9'); }
 
 // internal ASCII string to unsigned int conversion
-static unsigned int _atoi(const char **str) {
+unsigned int atoi(const char **str) {
     unsigned int i = 0U;
     while (_is_digit(**str)) {
         i = i * 10U + (unsigned int)(*((*str)++) - '0');
@@ -725,7 +722,7 @@ static int _vsnprintf(out_fct_type out, char *buffer, const size_t maxlen,
         // evaluate width field
         width = 0U;
         if (_is_digit(*format)) {
-            width = _atoi(&format);
+            width = atoi(&format);
         } else if (*format == '*') {
             const int w = va_arg(va, int);
             if (w < 0) {
@@ -743,7 +740,7 @@ static int _vsnprintf(out_fct_type out, char *buffer, const size_t maxlen,
             flags |= FLAGS_PRECISION;
             format++;
             if (_is_digit(*format)) {
-                precision = _atoi(&format);
+                precision = atoi(&format);
             } else if (*format == '*') {
                 const int prec = (int)va_arg(va, int);
                 precision = prec > 0 ? (unsigned int)prec : 0U;
@@ -1003,7 +1000,7 @@ int printf_(const char *format, ...) {
     return ret;
 }
 
-int sprintf_(char *buffer, const char *format, ...) {
+int sprintf(char *buffer, const char *format, ...) {
     va_list va;
     va_start(va, format);
     const int ret = _vsnprintf(_out_buffer, buffer, (size_t)-1, format, va);
@@ -1011,7 +1008,7 @@ int sprintf_(char *buffer, const char *format, ...) {
     return ret;
 }
 
-int snprintf_(char *buffer, size_t count, const char *format, ...) {
+int snprintf(char *buffer, size_t count, const char *format, ...) {
     va_list va;
     va_start(va, format);
     const int ret = _vsnprintf(_out_buffer, buffer, count, format, va);
@@ -1024,7 +1021,7 @@ int vprintf_(const char *format, va_list va) {
     return _vsnprintf(_out_char, buffer, (size_t)-1, format, va);
 }
 
-int vsnprintf_(char *buffer, size_t count, const char *format, va_list va) {
+int vsnprintf(char *buffer, size_t count, const char *format, va_list va) {
     return _vsnprintf(_out_buffer, buffer, count, format, va);
 }
 
@@ -1050,7 +1047,7 @@ int printf(const char *format, ...) {
     static char buf[CKB_C_STDLIB_PRINTF_BUFFER_SIZE];
     va_list va;
     va_start(va, format);
-    int ret = vsnprintf_(buf, CKB_C_STDLIB_PRINTF_BUFFER_SIZE, format, va);
+    int ret = vsnprintf(buf, CKB_C_STDLIB_PRINTF_BUFFER_SIZE, format, va);
     va_end(va);
     ckb_debug(buf);
     return ret;
@@ -1060,7 +1057,7 @@ int ckb_printf(const char *format, ...) {
     static char buf[CKB_C_STDLIB_PRINTF_BUFFER_SIZE];
     va_list va;
     va_start(va, format);
-    int ret = vsnprintf_(buf, CKB_C_STDLIB_PRINTF_BUFFER_SIZE, format, va);
+    int ret = vsnprintf(buf, CKB_C_STDLIB_PRINTF_BUFFER_SIZE, format, va);
     va_end(va);
     ckb_debug(buf);
     return ret;

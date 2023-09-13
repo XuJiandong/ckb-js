@@ -16,6 +16,7 @@ CFLAGS += -g -O3 \
 
 CFLAGS += -I deps/ckb-c-stdlib/libc -I deps/ckb-c-stdlib
 CFLAGS += -I include -I include/c-stdlib
+CFLAGS += -I include/compiler-rt
 
 CFLAGS += -Wextra -Wno-sign-compare -Wno-missing-field-initializers -Wundef -Wuninitialized\
 -Wunused -Wno-unused-parameter -Wchar-subscripts -funsigned-char -Wno-unused-function \
@@ -36,9 +37,12 @@ STD_OBJS=$(OBJDIR)/string_impl.o $(OBJDIR)/malloc_impl.o $(OBJDIR)/math_impl.o \
 		$(OBJDIR)/math_log_impl.o $(OBJDIR)/math_pow_impl.o $(OBJDIR)/printf_impl.o $(OBJDIR)/stdio_impl.o \
 		$(OBJDIR)/locale_impl.o
 
+RT_OBJS=$(OBJDIR)/fp_mul_impl.o $(OBJDIR)/fp_add_impl.o $(OBJDIR)/fp_compare_impl.o $(OBJDIR)/floatsidf.o\
+		$(OBJDIR)/divdf3.o $(OBJDIR)/floatunsitf.o $(OBJDIR)/fixdfdi.o
+
 all: build/ckb-js
 
-build/ckb-js: $(STD_OBJS) $(QJS_OBJS) $(OBJDIR)/impl.o
+build/ckb-js: $(STD_OBJS) $(QJS_OBJS) $(RT_OBJS) $(OBJDIR)/impl.o
 	$(LD) $(LDFLAGS) -o $@ $^
 
 $(OBJDIR)/%.o: quickjs/%.c
@@ -46,6 +50,10 @@ $(OBJDIR)/%.o: quickjs/%.c
 
 $(OBJDIR)/%.o: include/c-stdlib/src/%.c
 	$(CC) $(CFLAGS) -c -o $@ $<
+
+$(OBJDIR)/%.o: include/compiler-rt/%.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
 
 $(OBJDIR)/impl.o: deps/ckb-c-stdlib/libc/src/impl.c
 	$(CC) $(filter-out -DCKB_DECLARATION_ONLY, $(CFLAGS)) -c -o $@ $<

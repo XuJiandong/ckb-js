@@ -6,3 +6,6 @@ fmt:
 	clang-format -i -style=$(STYLE) *.c *.h 
 	clang-format -i -style=$(STYLE) c-stdlib/*.h 
 	clang-format -i -style=$(STYLE) c-stdlib/src/*.c
+	clang-format -i -style=$(STYLE) ../quickjs/qjs.c
+	clang-format -i -style=$(STYLE) compiler-rt/*.c compiler-rt/*.h
+	
