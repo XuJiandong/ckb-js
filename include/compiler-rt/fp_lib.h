@@ -31,11 +31,33 @@
 #define UINT32_C(c) c##U
 #define INT64_C(c) c##L
 
+#define FLT_MANT_DIG __FLT_MANT_DIG__
+#define DBL_MANT_DIG __DBL_MANT_DIG__
+#define LDBL_MANT_DIG __LDBL_MANT_DIG__
+
 #define clzsi __builtin_clz
 typedef int32_t si_int;
 typedef uint32_t su_int;
 typedef int64_t di_int;
 typedef uint64_t du_int;
+
+typedef union {
+    du_int all;
+    struct {
+        su_int high;
+        su_int low;
+    } s;
+} udwords;
+
+typedef union {
+    su_int u;
+    float f;
+} float_bits;
+
+typedef union {
+    udwords u;
+    double f;
+} double_bits;
 
 //
 #define COMPILER_RT_ABI
@@ -44,6 +66,12 @@ typedef uint64_t du_int;
 
 #define UINT64_C(c) (c##ULL)
 #define crt_isnan(x) __builtin_isnan((x))
+typedef enum {
+    CRT_FE_TONEAREST,
+    CRT_FE_DOWNWARD,
+    CRT_FE_UPWARD,
+    CRT_FE_TOWARDZERO
+} CRT_FE_ROUND_MODE;
 
 #if defined SINGLE_PRECISION
 

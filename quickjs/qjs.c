@@ -32,6 +32,41 @@
 #include "quickjs-libc.h"
 #include "ckb_syscalls.h"
 
+static void js_dump_obj(JSContext *ctx, JSValueConst val) {
+    const char *str;
+
+    str = JS_ToCString(ctx, val);
+    if (str) {
+        printf("%s", str);
+        JS_FreeCString(ctx, str);
+    } else {
+        printf("[exception]");
+    }
+}
+
+static void js_std_dump_error1(JSContext *ctx, JSValueConst exception_val) {
+    JSValue val;
+    BOOL is_error;
+
+    is_error = JS_IsError(ctx, exception_val);
+    js_dump_obj(ctx, exception_val);
+    if (is_error) {
+        val = JS_GetPropertyStr(ctx, exception_val, "stack");
+        if (!JS_IsUndefined(val)) {
+            js_dump_obj(ctx, val);
+        }
+        JS_FreeValue(ctx, val);
+    }
+}
+
+void js_std_dump_error(JSContext *ctx) {
+    JSValue exception_val;
+
+    exception_val = JS_GetException(ctx);
+    js_std_dump_error1(ctx, exception_val);
+    JS_FreeValue(ctx, exception_val);
+}
+
 static int eval_buf(JSContext *ctx, const void *buf, int buf_len,
                     const char *filename, int eval_flags) {
     JSValue val;
@@ -50,7 +85,7 @@ static int eval_buf(JSContext *ctx, const void *buf, int buf_len,
         val = JS_Eval(ctx, buf, buf_len, filename, eval_flags);
     }
     if (JS_IsException(val)) {
-        // js_std_dump_error(ctx);
+        js_std_dump_error(ctx);
         ret = -1;
     } else {
         ret = 0;
@@ -107,6 +142,7 @@ int main(int argc, char **argv) {
     if (expr) {
         if (eval_buf(ctx, expr, strlen(expr), "<cmdline>", 0)) goto fail;
     } else {
+        printf("Error");
         return 3;
     }
     // TODO:
