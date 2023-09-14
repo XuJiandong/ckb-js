@@ -18,7 +18,7 @@ CFLAGS += -I include/compiler-rt
 
 CFLAGS += -Wextra -Wno-sign-compare -Wno-missing-field-initializers -Wundef -Wuninitialized\
 -Wunused -Wno-unused-parameter -Wchar-subscripts -funsigned-char -Wno-unused-function \
--DCONFIG_VERSION=\"2021-03-27\"
+-DCONFIG_VERSION=\"2021-03-27-CKB\"
 CFLAGS += -Wno-incompatible-library-redeclaration -Wno-implicit-const-int-float-conversion -Wno-invalid-noreturn
 
 CFLAGS += -DCKB_DECLARATION_ONLY
@@ -52,22 +52,24 @@ build/ckb-js-vm: $(STD_OBJS) $(QJS_OBJS) $(RT_OBJS) $(OBJDIR)/impl.o
 	ls -lh build/ckb-js-vm
 
 $(OBJDIR)/%.o: quickjs/%.c
-	$(CC) $(CFLAGS) -c -o $@ $<
+	@echo build $<
+	@$(CC) $(CFLAGS) -c -o $@ $<
 
 $(OBJDIR)/%.o: include/c-stdlib/src/%.c
-	$(CC) $(CFLAGS) -c -o $@ $<
+	@echo build $<
+	@$(CC) $(CFLAGS) -c -o $@ $<
 
 $(OBJDIR)/%.o: include/compiler-rt/%.c
-	$(CC) $(CFLAGS) -c -o $@ $<
-
+	@echo build $<
+	@$(CC) $(CFLAGS) -c -o $@ $<
 
 $(OBJDIR)/impl.o: deps/ckb-c-stdlib/libc/src/impl.c
-	$(CC) $(filter-out -DCKB_DECLARATION_ONLY, $(CFLAGS)) -c -o $@ $<
+	@echo build $<
+	@$(CC) $(filter-out -DCKB_DECLARATION_ONLY, $(CFLAGS)) -c -o $@ $<
 
 clean:
 	rm -f build/*.o	
 	rm -f build/ckb-js-vm
 	rm -f build/ckb-js-vm.debug
-	ls -l build
 
 .phony: all clean

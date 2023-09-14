@@ -42,10 +42,18 @@ typedef int64_t di_int;
 typedef uint64_t du_int;
 
 typedef union {
+    di_int all;
+    struct {
+        su_int low;
+        si_int high;
+    } s;
+} dwords;
+
+typedef union {
     du_int all;
     struct {
-        su_int high;
         su_int low;
+        su_int high;
     } s;
 } udwords;
 
