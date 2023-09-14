@@ -1,4 +1,4 @@
-#define DOUBLE_PRECISION
+#define QUAD_PRECISION
 #define SRC_QUAD
 #define DST_DOUBLE
 

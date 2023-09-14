@@ -10,8 +10,6 @@
 // rounding (to nearest, ties to even).
 //
 //===----------------------------------------------------------------------===//
-#define DOUBLE_PRECISION
-
 #include "fp_lib.h"
 
 static __inline fp_t __mulXf3__(fp_t a, fp_t b) {
@@ -114,7 +112,3 @@ static __inline fp_t __mulXf3__(fp_t a, fp_t b) {
     if (productLo == signBit) productHi += productHi & 1;
     return fromRep(productHi);
 }
-
-COMPILER_RT_ABI fp_t __muldf3(fp_t a, fp_t b) { return __mulXf3__(a, b); }
-COMPILER_RT_ABI fp_t __mulsf3(fp_t a, fp_t b) { return __mulXf3__(a, b); }
-COMPILER_RT_ABI fp_t __multf3(fp_t a, fp_t b) { return __mulXf3__(a, b); }

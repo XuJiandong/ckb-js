@@ -90,24 +90,3 @@ static inline CMP_RESULT __unordXf2__(fp_t a, fp_t b) {
     const rep_t bAbs = toRep(b) & absMask;
     return aAbs > infRep || bAbs > infRep;
 }
-
-COMPILER_RT_ABI CMP_RESULT __ledf2(fp_t a, fp_t b) { return __leXf2__(a, b); }
-
-COMPILER_RT_ALIAS(__ledf2, __eqdf2)
-COMPILER_RT_ALIAS(__ledf2, __ltdf2)
-COMPILER_RT_ALIAS(__ledf2, __nedf2)
-
-COMPILER_RT_ABI CMP_RESULT __gedf2(fp_t a, fp_t b) { return __geXf2__(a, b); }
-COMPILER_RT_ALIAS(__gedf2, __gtdf2)
-
-COMPILER_RT_ABI CMP_RESULT __lesf2(fp_t a, fp_t b) { return __leXf2__(a, b); }
-COMPILER_RT_ALIAS(__lesf2, __eqsf2)
-COMPILER_RT_ALIAS(__lesf2, __ltsf2)
-COMPILER_RT_ALIAS(__lesf2, __nesf2)
-
-COMPILER_RT_ABI CMP_RESULT __gesf2(fp_t a, fp_t b) { return __geXf2__(a, b); }
-COMPILER_RT_ALIAS(__gesf2, __gtsf2)
-
-COMPILER_RT_ABI CMP_RESULT __unorddf2(fp_t a, fp_t b) {
-    return __unordXf2__(a, b);
-}
