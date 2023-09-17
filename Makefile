@@ -36,17 +36,17 @@ STD_OBJS=$(OBJDIR)/string_impl.o $(OBJDIR)/malloc_impl.o $(OBJDIR)/math_impl.o \
 		$(OBJDIR)/math_log_impl.o $(OBJDIR)/math_pow_impl.o $(OBJDIR)/printf_impl.o $(OBJDIR)/stdio_impl.o \
 		$(OBJDIR)/locale_impl.o
 
-RT_OBJS=$(OBJDIR)/fp_add_impl.o $(OBJDIR)/floatsidf.o\
-		$(OBJDIR)/divdf3.o $(OBJDIR)/floatunsitf.o $(OBJDIR)/fixdfdi.o $(OBJDIR)/floatdidf.o $(OBJDIR)/fp_trunc_impl.o\
-		$(OBJDIR)/trunctfdf2.o $(OBJDIR)/extendsfdf2.o $(OBJDIR)/fp_misc.o $(OBJDIR)/floatunsidf.o $(OBJDIR)/fixunsdfsi.o\
-		$(OBJDIR)/floatundidf.o $(OBJDIR)/floatsitf.o $(OBJDIR)/fixdfsi.o $(OBJDIR)/fixunsdfdi.o $(OBJDIR)/addtf3.o \
-		$(OBJDIR)/comparesf2.o $(OBJDIR)/comparedf2.o $(OBJDIR)/mulsf3.o $(OBJDIR)/muldf3.o $(OBJDIR)/multf3.o
-	
+# RT_OBJS=$(OBJDIR)/fp_add_impl.o $(OBJDIR)/floatsidf.o\
+# 		$(OBJDIR)/divdf3.o $(OBJDIR)/floatunsitf.o $(OBJDIR)/fixdfdi.o $(OBJDIR)/floatdidf.o $(OBJDIR)/fp_trunc_impl.o\
+# 		$(OBJDIR)/trunctfdf2.o $(OBJDIR)/extendsfdf2.o $(OBJDIR)/fp_misc.o $(OBJDIR)/floatunsidf.o $(OBJDIR)/fixunsdfsi.o\
+# 		$(OBJDIR)/floatundidf.o $(OBJDIR)/floatsitf.o $(OBJDIR)/fixdfsi.o $(OBJDIR)/fixunsdfdi.o $(OBJDIR)/addtf3.o \
+# 		$(OBJDIR)/comparesf2.o $(OBJDIR)/comparedf2.o $(OBJDIR)/mulsf3.o $(OBJDIR)/muldf3.o $(OBJDIR)/multf3.o
+
 
 all: build/ckb-js-vm
 
-build/ckb-js-vm: $(STD_OBJS) $(QJS_OBJS) $(RT_OBJS) $(OBJDIR)/impl.o
-	$(LD) $(LDFLAGS) -o $@ $^
+build/ckb-js-vm: $(STD_OBJS) $(QJS_OBJS) $(OBJDIR)/impl.o
+	$(LD) $(LDFLAGS) -L/tmp/llvm-project/build-compiler-rt/lib/baremetal -lclang_rt.builtins-riscv64 -o $@ $^
 	cp $@ $@.debug
 	$(OBJCOPY) --strip-debug --strip-all $@
 	ls -lh build/ckb-js-vm
@@ -68,7 +68,7 @@ $(OBJDIR)/impl.o: deps/ckb-c-stdlib/libc/src/impl.c
 	@$(CC) $(filter-out -DCKB_DECLARATION_ONLY, $(CFLAGS)) -c -o $@ $<
 
 clean:
-	rm -f build/*.o	
+	rm -f build/*.o
 	rm -f build/ckb-js-vm
 	rm -f build/ckb-js-vm.debug
 
