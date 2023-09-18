@@ -14,7 +14,6 @@ CFLAGS += -g -Os \
 
 CFLAGS += -I deps/ckb-c-stdlib/libc -I deps/ckb-c-stdlib
 CFLAGS += -I include -I include/c-stdlib
-CFLAGS += -I include/compiler-rt
 CFLAGS += -I deps/compiler-rt-builtins-riscv/compiler-rt/lib/builtins
 
 CFLAGS += -Wextra -Wno-sign-compare -Wno-missing-field-initializers -Wundef -Wuninitialized\
