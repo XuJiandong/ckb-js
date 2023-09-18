@@ -26,6 +26,7 @@ CFLAGS += -D__BYTE_ORDER=1234 -D__LITTLE_ENDIAN=1234 -D__ISO_C_VISIBLE=1999 -D__
 CFLAGS += -DCKB_MALLOC_DECLARATION_ONLY -DCKB_PRINTF_DECLARATION_ONLY
 
 LDFLAGS := -static --gc-sections
+LDFLAGS += -Ldeps/compiler-rt-builtins-riscv/build-compiler-rt/lib/baremetal -lclang_rt.builtins-riscv64
 
 OBJDIR=build
 
@@ -36,17 +37,14 @@ STD_OBJS=$(OBJDIR)/string_impl.o $(OBJDIR)/malloc_impl.o $(OBJDIR)/math_impl.o \
 		$(OBJDIR)/math_log_impl.o $(OBJDIR)/math_pow_impl.o $(OBJDIR)/printf_impl.o $(OBJDIR)/stdio_impl.o \
 		$(OBJDIR)/locale_impl.o
 
-# RT_OBJS=$(OBJDIR)/fp_add_impl.o $(OBJDIR)/floatsidf.o\
-# 		$(OBJDIR)/divdf3.o $(OBJDIR)/floatunsitf.o $(OBJDIR)/fixdfdi.o $(OBJDIR)/floatdidf.o $(OBJDIR)/fp_trunc_impl.o\
-# 		$(OBJDIR)/trunctfdf2.o $(OBJDIR)/extendsfdf2.o $(OBJDIR)/fp_misc.o $(OBJDIR)/floatunsidf.o $(OBJDIR)/fixunsdfsi.o\
-# 		$(OBJDIR)/floatundidf.o $(OBJDIR)/floatsitf.o $(OBJDIR)/fixdfsi.o $(OBJDIR)/fixunsdfdi.o $(OBJDIR)/addtf3.o \
-# 		$(OBJDIR)/comparesf2.o $(OBJDIR)/comparedf2.o $(OBJDIR)/mulsf3.o $(OBJDIR)/muldf3.o $(OBJDIR)/multf3.o
-
 
 all: build/ckb-js-vm
 
-build/ckb-js-vm: $(STD_OBJS) $(QJS_OBJS) $(OBJDIR)/impl.o
-	$(LD) $(LDFLAGS) -L/tmp/llvm-project/build-compiler-rt/lib/baremetal -lclang_rt.builtins-riscv64 -o $@ $^
+deps/compiler-rt-builtins-riscv/build-compiler-rt/lib/baremetal/libclang_rt.builtins-riscv64.a:
+	cd deps/compiler-rt-builtins-riscv && sh build.sh
+
+build/ckb-js-vm: $(STD_OBJS) $(QJS_OBJS) $(OBJDIR)/impl.o deps/compiler-rt-builtins-riscv/build-compiler-rt/lib/baremetal/libclang_rt.builtins-riscv64.a
+	$(LD) $(LDFLAGS) -o $@ $^
 	cp $@ $@.debug
 	$(OBJCOPY) --strip-debug --strip-all $@
 	ls -lh build/ckb-js-vm
