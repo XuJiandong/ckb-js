@@ -57,10 +57,6 @@ $(OBJDIR)/%.o: include/c-stdlib/src/%.c
 	@echo build $<
 	@$(CC) $(CFLAGS) -c -o $@ $<
 
-$(OBJDIR)/%.o: include/compiler-rt/%.c
-	@echo build $<
-	@$(CC) $(CFLAGS) -c -o $@ $<
-
 $(OBJDIR)/impl.o: deps/ckb-c-stdlib/libc/src/impl.c
 	@echo build $<
 	@$(CC) $(filter-out -DCKB_DECLARATION_ONLY, $(CFLAGS)) -c -o $@ $<
