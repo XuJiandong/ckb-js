@@ -29,8 +29,8 @@
 #include <string.h>
 #include <stddef.h>
 #include "cutils.h"
-#include "quickjs-libc.h"
-#include "ckb_syscalls.h"
+#include "std_module.h"
+#include "ckb_module.h"
 
 static void js_dump_obj(JSContext *ctx, JSValueConst val) {
     const char *str;
@@ -78,7 +78,8 @@ static int eval_buf(JSContext *ctx, const void *buf, int buf_len,
         val = JS_Eval(ctx, buf, buf_len, filename,
                       eval_flags | JS_EVAL_FLAG_COMPILE_ONLY);
         if (!JS_IsException(val)) {
-            js_module_set_import_meta(ctx, val, TRUE, TRUE);
+            // TODO:
+            // js_module_set_import_meta(ctx, val, TRUE, TRUE);
             val = JS_EvalFunction(ctx, val);
         }
     } else {
@@ -107,11 +108,13 @@ static JSContext *JS_NewCustomContext(JSRuntime *rt) {
 }
 
 int main(int argc, char **argv) {
+    int err = 0;
     JSRuntime *rt = NULL;
     JSContext *ctx = NULL;
     char *expr = argv[0];
     size_t memory_limit = 0;
     size_t stack_size = 0;
+    size_t optind = 1;
 
     if (argc == 0) {
         printf("qjs: not enough argv");
@@ -128,32 +131,26 @@ int main(int argc, char **argv) {
     // js_std_set_worker_new_context_func(JS_NewCustomContext);
     // js_std_init_handlers(rt);
     ctx = JS_NewCustomContext(rt);
-    if (!ctx) {
-        printf("qjs: cannot allocate JS context\n");
-        return 2;
-    }
+    CHECK2(ctx != NULL, -1);
     /* loader for ES6 modules */
     // TODO:
     // JS_SetModuleLoaderFunc(rt, NULL, js_module_loader, NULL);
+    js_std_add_helpers(ctx, argc - optind, argv + optind);
+    err = js_init_module_ckb(ctx);
+    CHECK(err);
 
-    // TODO:
-    // js_std_add_helpers(ctx, argc - optind, argv + optind);
-
-    if (expr) {
-        if (eval_buf(ctx, expr, strlen(expr), "<cmdline>", 0)) goto fail;
-    } else {
-        printf("Error");
-        return 3;
-    }
-    // TODO:
+    CHECK2(expr != NULL, -1);
+    err = eval_buf(ctx, expr, strlen(expr), "<cmdline>", 0);
+    CHECK(err);
+    // No cleanup is needed.
     // js_std_free_handlers(rt);
     // JS_FreeContext(ctx);
     // JS_FreeRuntime(rt);
-    return 0;
-fail:
-    // TODO:
+    return err;
+exit:
+    // No cleanup is needed.
     // js_std_free_handlers(rt);
     // JS_FreeContext(ctx);
     // JS_FreeRuntime(rt);
-    return 1;
+    return err;
 }

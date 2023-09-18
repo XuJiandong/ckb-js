@@ -28,6 +28,4 @@ static const struct lconv posix_lconv = {
     .int_n_sign_posn = CHAR_MAX,
 };
 
-struct lconv *localeconv(void) {
-    return (void *)&posix_lconv;
-}
+struct lconv *localeconv(void) { return (void *)&posix_lconv; }
