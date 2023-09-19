@@ -88,7 +88,7 @@ double scalbn(double x, int n) {
         return x;
     }
     if (k <= -54) {
-        if (n > 50000) /* in case integer overflow in n+k */
+        if (n > 50000)                       /* in case integer overflow in n+k */
             return huge * copysign(huge, x); /*overflow*/
         else
             return tiny * copysign(tiny, x); /*underflow*/
@@ -117,8 +117,7 @@ double pow(double x, double y) {
     if (hx == 0x3ff00000 && lx == 0) return one;
 
     /* y!=zero: result is NaN if either arg is NaN */
-    if (ix > 0x7ff00000 || ((ix == 0x7ff00000) && (lx != 0)) ||
-        iy > 0x7ff00000 || ((iy == 0x7ff00000) && (ly != 0)))
+    if (ix > 0x7ff00000 || ((ix == 0x7ff00000) && (lx != 0)) || iy > 0x7ff00000 || ((iy == 0x7ff00000) && (ly != 0)))
         return (x + 0.0) + (y + 0.0);
 
     /* determine if y is an odd int when x < 0
@@ -195,7 +194,7 @@ double pow(double x, double y) {
     /* (x<0)**(non-int) is NaN */
     if ((n | yisint) == 0) return (x - x) / (x - x);
 
-    s = one; /* s (sign of result -ve**odd) = -1 else = 1 */
+    s = one;                               /* s (sign of result -ve**odd) = -1 else = 1 */
     if ((n | (yisint - 1)) == 0) s = -one; /* (-ve)**(odd int) */
 
     /* |y| is huge */
@@ -205,10 +204,8 @@ double pow(double x, double y) {
             if (ix >= 0x3ff00000) return (hy > 0) ? huge * huge : tiny * tiny;
         }
         /* over/underflow if x is not close to one */
-        if (ix < 0x3fefffff)
-            return (hy < 0) ? s * huge * huge : s * tiny * tiny;
-        if (ix > 0x3ff00000)
-            return (hy > 0) ? s * huge * huge : s * tiny * tiny;
+        if (ix < 0x3fefffff) return (hy < 0) ? s * huge * huge : s * tiny * tiny;
+        if (ix > 0x3ff00000) return (hy > 0) ? s * huge * huge : s * tiny * tiny;
         /* now |1-x| is tiny <= 2**-20, suffice to compute
            log(x) by x-x^2/2+x^3/3-x^4/4 */
         t = ax - one; /* t has 20 trailing zeros */
@@ -255,8 +252,7 @@ double pow(double x, double y) {
         s_l = v * ((u - s_h * t_h) - s_h * t_l);
         /* compute log(ax) */
         s2 = ss * ss;
-        r = s2 * s2 *
-            (L1 + s2 * (L2 + s2 * (L3 + s2 * (L4 + s2 * (L5 + s2 * L6)))));
+        r = s2 * s2 * (L1 + s2 * (L2 + s2 * (L3 + s2 * (L4 + s2 * (L5 + s2 * L6)))));
         r += s_l * (s_h + ss);
         s2 = s_h * s_h;
         t_h = 3.0 + s2 + r;

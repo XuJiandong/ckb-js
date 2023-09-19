@@ -67,16 +67,14 @@ void js_std_dump_error(JSContext *ctx) {
     JS_FreeValue(ctx, exception_val);
 }
 
-static int eval_buf(JSContext *ctx, const void *buf, int buf_len,
-                    const char *filename, int eval_flags) {
+static int eval_buf(JSContext *ctx, const void *buf, int buf_len, const char *filename, int eval_flags) {
     JSValue val;
     int ret;
 
     if ((eval_flags & JS_EVAL_TYPE_MASK) == JS_EVAL_TYPE_MODULE) {
         /* for the modules, we compile then run to be able to set
            import.meta */
-        val = JS_Eval(ctx, buf, buf_len, filename,
-                      eval_flags | JS_EVAL_FLAG_COMPILE_ONLY);
+        val = JS_Eval(ctx, buf, buf_len, filename, eval_flags | JS_EVAL_FLAG_COMPILE_ONLY);
         if (!JS_IsException(val)) {
             // TODO:
             // js_module_set_import_meta(ctx, val, TRUE, TRUE);

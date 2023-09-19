@@ -18,8 +18,7 @@ int fs_access_enabled() { return s_fs_access_enabled; }
 
 #define memory_barrier() asm volatile("fence" ::: "memory")
 
-static inline long __internal_syscall(long n, long _a0, long _a1, long _a2,
-                                      long _a3, long _a4, long _a5) {
+static inline long __internal_syscall(long n, long _a0, long _a1, long _a2, long _a3, long _a4, long _a5) {
     register long a0 asm("a0") = _a0;
     register long a1 asm("a1") = _a1;
     register long a2 asm("a2") = _a2;
@@ -33,10 +32,7 @@ static inline long __internal_syscall(long n, long _a0, long _a1, long _a2,
     register long syscall_id asm("a7") = n;
 #endif
 
-    asm volatile("scall"
-                 : "+r"(a0)
-                 : "r"(a1), "r"(a2), "r"(a3), "r"(a4), "r"(a5),
-                   "r"(syscall_id));
+    asm volatile("scall" : "+r"(a0) : "r"(a1), "r"(a2), "r"(a3), "r"(a4), "r"(a5), "r"(syscall_id));
     /*
      * Syscalls might modify memory sent as pointer, adding a barrier here
      * ensures gcc won't do incorrect optimization.
@@ -46,9 +42,8 @@ static inline long __internal_syscall(long n, long _a0, long _a1, long _a2,
     return a0;
 }
 
-#define ckb_syscall(n, a, b, c, d, e, f)                              \
-    __internal_syscall(n, (long)(a), (long)(b), (long)(c), (long)(d), \
-                       (long)(e), (long)(f))
+#define ckb_syscall(n, a, b, c, d, e, f) \
+    __internal_syscall(n, (long)(a), (long)(b), (long)(c), (long)(d), (long)(e), (long)(f))
 
 #define NOT_IMPL(name)                                                 \
     do {                                                               \
@@ -181,8 +176,7 @@ int fgetc(FILE *stream) {
     if (!fs_access_enabled()) {
         NOT_IMPL(fgetc);
     }
-    if (stream == 0 || stream->file->rc == 0 ||
-        stream->offset == stream->file->size) {
+    if (stream == 0 || stream->file->rc == 0 || stream->offset == stream->file->size) {
         return -1;  // EOF
     }
     unsigned char *c = (unsigned char *)stream->file->content + stream->offset;
