@@ -3,4 +3,4 @@
 	url = https://github.com/nervosnetwork/ckb-c-stdlib.git
 [submodule "deps/compiler-rt-builtins-riscv"]
 	path = deps/compiler-rt-builtins-riscv
-	url = https://github.com/mohanson/compiler-rt-builtins-riscv
+	url = https://github.com/XuJiandong/compiler-rt-builtins-riscv.git
