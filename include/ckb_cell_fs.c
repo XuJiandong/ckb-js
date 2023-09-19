@@ -38,17 +38,14 @@ int get_file(const CellFileSystem *fs, const char *filename, FSFile **f) {
     return -1;
 }
 
-int ckb_get_file(const char *filename, FSFile **file) {
-    return get_file(CELL_FILE_SYSTEM, filename, file);
-}
+int ckb_get_file(const char *filename, FSFile **file) { return get_file(CELL_FILE_SYSTEM, filename, file); }
 
 int load_fs(CellFileSystem **fs, void *buf, uint64_t buflen) {
     if (fs == NULL || buf == NULL) {
         return -1;
     }
 
-    CellFileSystemNode *node =
-        (CellFileSystemNode *)malloc(sizeof(CellFileSystemNode));
+    CellFileSystemNode *node = (CellFileSystemNode *)malloc(sizeof(CellFileSystemNode));
     if (node == NULL) {
         return -1;
     }
