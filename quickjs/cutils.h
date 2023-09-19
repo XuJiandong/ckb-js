@@ -294,4 +294,23 @@ void rqsort(void *base, size_t nmemb, size_t size,
             int (*cmp)(const void *, const void *, void *),
             void *arg);
 
+#define CHECK2(cond, code) \
+  do {                     \
+    if (!(cond)) {         \
+      err = code;          \
+      printf("checking failed on %s:%d, code = %d", __FILE__, __LINE__, code); \
+      goto exit;           \
+    }                      \
+  } while (0)
+
+#define CHECK(_code)    \
+  do {                  \
+    int code = (_code); \
+    if (code != 0) {    \
+      err = code;       \
+      printf("checking failed on %s:%d, code = %d", __FILE__, __LINE__, code); \
+      goto exit;        \
+    }                   \
+  } while (0)
+
 #endif  /* CUTILS_H */

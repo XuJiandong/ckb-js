@@ -5,6 +5,13 @@ OBJCOPY := llvm-objcopy-16
 AR := llvm-ar-16
 RANLIB := llvm-ranlib-16
 
+UNAME := $(shell uname)
+ifeq ($(UNAME), Darwin)
+	LD := ld.lld
+	OBJCOPY := llvm-objcopy
+	RANLIB := llvm-ranlib
+endif
+
 CFLAGS := --target=riscv64 -march=rv64imc_zba_zbb_zbc_zbs
 CFLAGS += -g -Os \
 		-Wall -Werror -Wno-nonnull -Wno-unused-function \
@@ -31,7 +38,7 @@ LDFLAGS += -Ldeps/compiler-rt-builtins-riscv/build-compiler-rt/lib/baremetal -lc
 OBJDIR=build
 
 QJS_OBJS=$(OBJDIR)/qjs.o $(OBJDIR)/quickjs.o $(OBJDIR)/libregexp.o $(OBJDIR)/libunicode.o \
-		$(OBJDIR)/cutils.o $(OBJDIR)/mocked.o
+		$(OBJDIR)/cutils.o $(OBJDIR)/mocked.o $(OBJDIR)/std_module.o $(OBJDIR)/ckb_module.o
 
 STD_OBJS=$(OBJDIR)/string_impl.o $(OBJDIR)/malloc_impl.o $(OBJDIR)/math_impl.o \
 		$(OBJDIR)/math_log_impl.o $(OBJDIR)/math_pow_impl.o $(OBJDIR)/printf_impl.o $(OBJDIR)/stdio_impl.o \
@@ -61,9 +68,18 @@ $(OBJDIR)/impl.o: deps/ckb-c-stdlib/libc/src/impl.c
 	@echo build $<
 	@$(CC) $(filter-out -DCKB_DECLARATION_ONLY, $(CFLAGS)) -c -o $@ $<
 
+test:
+	make -f tests/examples/Makefile
+	make -f tests/basic/Makefile
+
 clean:
 	rm -f build/*.o
 	rm -f build/ckb-js-vm
 	rm -f build/ckb-js-vm.debug
+
+install:
+	wget 'https://github.com/nervosnetwork/ckb-standalone-debugger/releases/download/v0.111.0/ckb-debugger-linux-x64.tar.gz'
+	tar zxvf ckb-debugger-linux-x64.tar.gz
+	mv ckb-debugger ~/.cargo/bin/ckb-debugger
 
 .phony: all clean

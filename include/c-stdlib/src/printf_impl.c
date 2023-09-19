@@ -1038,7 +1038,7 @@ int fctprintf(void (*out)(char character, void *arg), void *arg,
 
 // Default PRINTF_BUFFER_SIZE
 #ifndef CKB_C_STDLIB_PRINTF_BUFFER_SIZE
-#define CKB_C_STDLIB_PRINTF_BUFFER_SIZE 256
+#define CKB_C_STDLIB_PRINTF_BUFFER_SIZE 2048
 #endif
 // syscall
 int ckb_debug(const char *s);
