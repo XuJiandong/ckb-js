@@ -28,7 +28,8 @@
 #include "my_stdio.h"
 
 #include <stdarg.h>
-// #include <inttypes.h>
+#include <stdint.h>
+#include "my_inttypes.h"
 #include <string.h>
 // #include <assert.h>
 // #include <sys/time.h>
