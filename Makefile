@@ -33,7 +33,7 @@ CFLAGS += -D__BYTE_ORDER=1234 -D__LITTLE_ENDIAN=1234 -D__ISO_C_VISIBLE=1999 -D__
 CFLAGS += -DCKB_MALLOC_DECLARATION_ONLY -DCKB_PRINTF_DECLARATION_ONLY
 
 LDFLAGS := -static --gc-sections
-LDFLAGS += -Ldeps/compiler-rt-builtins-riscv/build-compiler-rt/lib/baremetal -lclang_rt.builtins-riscv64
+LDFLAGS += -Ldeps/compiler-rt-builtins-riscv/build -lcompiler-rt
 
 OBJDIR=build
 
@@ -47,10 +47,10 @@ STD_OBJS=$(OBJDIR)/string_impl.o $(OBJDIR)/malloc_impl.o $(OBJDIR)/math_impl.o \
 
 all: build/ckb-js-vm
 
-deps/compiler-rt-builtins-riscv/build-compiler-rt/lib/baremetal/libclang_rt.builtins-riscv64.a:
-	cd deps/compiler-rt-builtins-riscv && sh build.sh
+deps/compiler-rt-builtins-riscv/build/libcompiler-rt.a:
+	cd deps/compiler-rt-builtins-riscv && make
 
-build/ckb-js-vm: $(STD_OBJS) $(QJS_OBJS) $(OBJDIR)/impl.o deps/compiler-rt-builtins-riscv/build-compiler-rt/lib/baremetal/libclang_rt.builtins-riscv64.a
+build/ckb-js-vm: $(STD_OBJS) $(QJS_OBJS) $(OBJDIR)/impl.o deps/compiler-rt-builtins-riscv/build/libcompiler-rt.a
 	$(LD) $(LDFLAGS) -o $@ $^
 	cp $@ $@.debug
 	$(OBJCOPY) --strip-debug --strip-all $@
