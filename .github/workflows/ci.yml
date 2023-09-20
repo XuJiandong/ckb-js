@@ -3,8 +3,7 @@ name: CI
 on: [push, pull_request]
 
 jobs:
-  build:
-
+  linux:
     runs-on: ubuntu-latest
 
     steps:
@@ -19,3 +18,15 @@ jobs:
       run: make install
     - name: Tests
       run: make test
+  
+  macos:
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+    - name: Install LLVM and Clang
+      run: brew install llvm@16
+    - name: Build
+      run: export PATH="/usr/local/opt/llvm/bin:$PATH" && make all
