@@ -28,9 +28,5 @@ jobs:
         submodules: recursive
     - name: Install LLVM and Clang
       run: brew install llvm@16
-    - name: Set path
-      run: export PATH="/usr/local/opt/llvm/bin:$PATH"
-    - name: Setup upterm session
-      uses: lhotari/action-upterm@v1
     - name: Build
-      run: make all
+      run: export PATH="/usr/local/opt/llvm/bin:$PATH" && make all
