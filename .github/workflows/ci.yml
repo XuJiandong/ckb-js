@@ -28,5 +28,7 @@ jobs:
         submodules: recursive
     - name: Install LLVM and Clang
       run: brew install llvm@16
+    - name: Set path
+      run: export PATH="/usr/local/opt/llvm/bin:$PATH"
     - name: Build
       run: make all
