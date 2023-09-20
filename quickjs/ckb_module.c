@@ -11,7 +11,7 @@ enum SyscallErrorCode {
 
 static JSValue syscall_exit(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
     int32_t status;
-    if (JS_ToInt32(ctx, &status, argv[0])) status = -1;
+    if (JS_ToInt32(ctx, &status, argv[0])) return JS_EXCEPTION;
     ckb_exit((int8_t)status);
     return JS_UNDEFINED;
 }
@@ -443,9 +443,9 @@ int js_init_module_ckb(JSContext *ctx) {
     JS_SetPropertyStr(ctx, ckb, "SOURCE_OUTPUT", JS_NewInt64(ctx, CKB_SOURCE_OUTPUT));
     JS_SetPropertyStr(ctx, ckb, "SOURCE_CELL_DEP", JS_NewInt64(ctx, CKB_SOURCE_CELL_DEP));
     JS_SetPropertyStr(ctx, ckb, "SOURCE_HEADER_DEP", JS_NewInt64(ctx, CKB_SOURCE_HEADER_DEP));
-    // TODO: should use bigint. When it's too big(> 0xFFFFFFFF), it is stored as float number.
-    JS_SetPropertyStr(ctx, ckb, "SOURCE_GROUP_INPUT", JS_NewInt64(ctx, CKB_SOURCE_GROUP_INPUT));
-    JS_SetPropertyStr(ctx, ckb, "SOURCE_GROUP_OUTPUT", JS_NewInt64(ctx, CKB_SOURCE_GROUP_OUTPUT));
+    // Should use bigint. If Int64 is used, when it's too big(> 0xFFFFFFFF), it is stored as float number.
+    JS_SetPropertyStr(ctx, ckb, "SOURCE_GROUP_INPUT", JS_NewBigUint64(ctx, CKB_SOURCE_GROUP_INPUT));
+    JS_SetPropertyStr(ctx, ckb, "SOURCE_GROUP_OUTPUT", JS_NewBigUint64(ctx, CKB_SOURCE_GROUP_OUTPUT));
 
     JS_SetPropertyStr(ctx, ckb, "CELL_FIELD_CAPACITY", JS_NewInt64(ctx, CKB_CELL_FIELD_CAPACITY));
     JS_SetPropertyStr(ctx, ckb, "CELL_FIELD_DATA_HASH", JS_NewInt64(ctx, CKB_CELL_FIELD_DATA_HASH));

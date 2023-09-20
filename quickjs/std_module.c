@@ -4,6 +4,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <stddef.h>
+#include <stdbool.h>
 #include "cutils.h"
 #include "std_module.h"
 #include "ckb_syscall_apis.h"
@@ -26,6 +27,15 @@ static JSValue js_print(JSContext *ctx, JSValueConst this_val, int argc, JSValue
     return JS_UNDEFINED;
 }
 
+static JSValue js_assert(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    bool success = JS_ToBool(ctx, argv[0]);
+    if (!success) {
+        js_print(ctx, this_val, argc - 1, argv + 1);
+        return JS_EXCEPTION;
+    }
+    return JS_UNDEFINED;
+}
+
 void js_std_add_helpers(JSContext *ctx, int argc, char **argv) {
     JSValue global_obj, console, args;
     int i;
@@ -35,6 +45,7 @@ void js_std_add_helpers(JSContext *ctx, int argc, char **argv) {
 
     console = JS_NewObject(ctx);
     JS_SetPropertyStr(ctx, console, "log", JS_NewCFunction(ctx, js_print, "log", 1));
+    JS_SetPropertyStr(ctx, console, "assert", JS_NewCFunction(ctx, js_assert, "assert", 1));
     JS_SetPropertyStr(ctx, global_obj, "console", console);
 
     /* same methods as the mozilla JS shell */

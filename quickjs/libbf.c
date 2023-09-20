@@ -22,11 +22,14 @@
  * THE SOFTWARE.
  */
 #include <stdlib.h>
+#include "my_stdlib.h"
 #include <stdio.h>
-#include <inttypes.h>
-#include <math.h>
+#include <stdint.h>
+#include "my_stdint.h"
+#include "my_inttypes.h"
+#include <my_math.h>
 #include <string.h>
-#include <assert.h>
+#include <my_assert.h>
 
 #ifdef __AVX2__
 #include <immintrin.h>
@@ -717,10 +720,11 @@ void bf_print_str(const char *str, const bf_t *a)
     if (a->expn == BF_EXP_NAN) {
         printf("NaN");
     } else {
+        // TODO
         if (a->sign)
-            putchar('-');
+            ;//putchar('-');
         if (a->expn == BF_EXP_ZERO) {
-            putchar('0');
+            ;//putchar('0');
         } else if (a->expn == BF_EXP_INF) {
             printf("Inf");
         } else {
@@ -6276,9 +6280,9 @@ void bfdec_print_str(const char *str, const bfdec_t *a)
         printf("NaN");
     } else {
         if (a->sign)
-            putchar('-');
+            ; //putchar('-');
         if (a->expn == BF_EXP_ZERO) {
-            putchar('0');
+            ; // putchar('0');
         } else if (a->expn == BF_EXP_INF) {
             printf("Inf");
         } else {

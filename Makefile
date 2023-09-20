@@ -30,7 +30,7 @@ CFLAGS += -Wno-incompatible-library-redeclaration -Wno-implicit-const-int-float-
 
 CFLAGS += -DCKB_DECLARATION_ONLY
 CFLAGS += -D__BYTE_ORDER=1234 -D__LITTLE_ENDIAN=1234 -D__ISO_C_VISIBLE=1999 -D__GNU_VISIBLE
-CFLAGS += -DCKB_MALLOC_DECLARATION_ONLY -DCKB_PRINTF_DECLARATION_ONLY
+CFLAGS += -DCKB_MALLOC_DECLARATION_ONLY -DCKB_PRINTF_DECLARATION_ONLY -DCONFIG_BIGNUM
 
 LDFLAGS := -static --gc-sections
 LDFLAGS += -Ldeps/compiler-rt-builtins-riscv/build -lcompiler-rt
@@ -38,7 +38,7 @@ LDFLAGS += -Ldeps/compiler-rt-builtins-riscv/build -lcompiler-rt
 OBJDIR=build
 
 QJS_OBJS=$(OBJDIR)/qjs.o $(OBJDIR)/quickjs.o $(OBJDIR)/libregexp.o $(OBJDIR)/libunicode.o \
-		$(OBJDIR)/cutils.o $(OBJDIR)/mocked.o $(OBJDIR)/std_module.o $(OBJDIR)/ckb_module.o
+		$(OBJDIR)/cutils.o $(OBJDIR)/mocked.o $(OBJDIR)/std_module.o $(OBJDIR)/ckb_module.o $(OBJDIR)/libbf.o
 
 STD_OBJS=$(OBJDIR)/string_impl.o $(OBJDIR)/malloc_impl.o $(OBJDIR)/math_impl.o \
 		$(OBJDIR)/math_log_impl.o $(OBJDIR)/math_pow_impl.o $(OBJDIR)/printf_impl.o $(OBJDIR)/stdio_impl.o \

@@ -9,6 +9,5 @@ int atoi(const char *);
 int abs(int);
 void exit(int);
 void abort(void);
-#define PRId64 "ld"
 
 #endif /* C_STDLIB_STDLIB_H_ */
