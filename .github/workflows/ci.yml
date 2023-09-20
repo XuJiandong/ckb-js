@@ -28,5 +28,6 @@ jobs:
         submodules: recursive
     - name: Install LLVM and Clang
       uses: brew install llvm@16
+
     - name: Build
       run: make all
