@@ -422,6 +422,11 @@ exit:
     }
 }
 
+int read_local_file(char *buf, int size) {
+    int ret = syscall(9000, buf, size, 0, 0, 0, 0);
+    return ret;
+}
+
 /*
 TODO:
 // who allocated the memory indicated by aligned_addr?
