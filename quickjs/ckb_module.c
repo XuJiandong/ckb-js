@@ -388,16 +388,49 @@ static JSValue syscall_current_cycles(JSContext *ctx, JSValueConst this_value, i
     return JS_NewInt64(ctx, cycles);
 }
 
+static JSValue syscall_exec_cell(JSContext *ctx, JSValueConst this_value, int argc, JSValueConst *argv) {
+    const size_t argv_offset = 4;
+    int err = 0;
+    size_t code_hash_len = 0;
+    uint32_t hash_type = 0;
+    uint32_t offset = 0;
+    uint32_t length = 0;
+    const char *passed_argv[256] = {0};
+
+    uint8_t *code_hash = JS_GetArrayBuffer(ctx, &code_hash_len, argv[0]);
+    CHECK2(code_hash_len == 32, -1);
+
+    err = JS_ToUint32(ctx, &hash_type, argv[1]);
+    CHECK(err);
+
+    err = JS_ToUint32(ctx, &offset, argv[2]);
+    CHECK(err);
+
+    err = JS_ToUint32(ctx, &length, argv[3]);
+    CHECK(err);
+
+    for (int i = argv_offset; i < argc; i++) {
+        passed_argv[i - argv_offset] = JS_ToCString(ctx, argv[i]);
+    }
+    ckb_exec_cell(code_hash, (uint8_t)hash_type, offset, length, argc - argv_offset, passed_argv);
+    // never reach here
+exit:
+    if (err != 0) {
+        return JS_EXCEPTION;
+    } else {
+        return JS_UNDEFINED;
+    }
+}
+
 /*
 TODO:
-int ckb_exec_cell(const uint8_t* code_hash, uint8_t hash_type, uint32_t offset,
-                  uint32_t length, int argc, const char* argv[]);
-
+// who allocated the memory indicated by aligned_addr?
 int ckb_dlopen2(const uint8_t* dep_cell_hash, uint8_t hash_type,
                 uint8_t* aligned_addr, size_t aligned_size, void** handle,
                 size_t* consumed_size);
 void* ckb_dlsym(void* handle, const char* symbol);
 
+// arguments passed to spawn are too much? can we organize them into a object?
 typedef struct spawn_args_t {
   uint64_t memory_limit;
   int8_t* exit_code;
@@ -438,6 +471,7 @@ int js_init_module_ckb(JSContext *ctx) {
                       JS_NewCFunction(ctx, syscall_load_input_by_field, "load_input_by_field", 4));
     JS_SetPropertyStr(ctx, ckb, "vm_version", JS_NewCFunction(ctx, syscall_vm_version, "vm_version", 0));
     JS_SetPropertyStr(ctx, ckb, "current_cycles", JS_NewCFunction(ctx, syscall_current_cycles, "current_cycles", 0));
+    JS_SetPropertyStr(ctx, ckb, "exec_cell", JS_NewCFunction(ctx, syscall_exec_cell, "exec_cell", 4));
 
     JS_SetPropertyStr(ctx, ckb, "SOURCE_INPUT", JS_NewInt64(ctx, CKB_SOURCE_INPUT));
     JS_SetPropertyStr(ctx, ckb, "SOURCE_OUTPUT", JS_NewInt64(ctx, CKB_SOURCE_OUTPUT));
@@ -454,6 +488,13 @@ int js_init_module_ckb(JSContext *ctx) {
     JS_SetPropertyStr(ctx, ckb, "CELL_FIELD_TYPE", JS_NewInt64(ctx, CKB_CELL_FIELD_TYPE));
     JS_SetPropertyStr(ctx, ckb, "CELL_FIELD_TYPE_HASH", JS_NewInt64(ctx, CKB_CELL_FIELD_TYPE_HASH));
     JS_SetPropertyStr(ctx, ckb, "CELL_FIELD_OCCUPIED_CAPACITY", JS_NewInt64(ctx, CKB_CELL_FIELD_OCCUPIED_CAPACITY));
+
+    JS_SetPropertyStr(ctx, ckb, "HEADER_FIELD_EPOCH_NUMBER", JS_NewInt64(ctx, CKB_HEADER_FIELD_EPOCH_NUMBER));
+    JS_SetPropertyStr(ctx, ckb, "HEADER_FIELD_EPOCH_START_BLOCK_NUMBER",
+                      JS_NewInt64(ctx, CKB_HEADER_FIELD_EPOCH_START_BLOCK_NUMBER));
+    JS_SetPropertyStr(ctx, ckb, "HEADER_FIELD_EPOCH_LENGTH", JS_NewInt64(ctx, CKB_HEADER_FIELD_EPOCH_LENGTH));
+    JS_SetPropertyStr(ctx, ckb, "INPUT_FIELD_OUT_POINT", JS_NewInt64(ctx, CKB_INPUT_FIELD_OUT_POINT));
+    JS_SetPropertyStr(ctx, ckb, "INPUT_FIELD_SINCE", JS_NewInt64(ctx, CKB_INPUT_FIELD_SINCE));
 
     JS_SetPropertyStr(ctx, global_obj, "ckb", ckb);
     JS_FreeValue(ctx, global_obj);
