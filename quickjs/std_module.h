@@ -4,5 +4,5 @@
 #include <stdlib.h>
 #include "quickjs.h"
 
-void js_std_add_helpers(JSContext *ctx, int argc, char **argv);
+void js_std_add_helpers(JSContext *ctx, int argc, const char *argv[]);
 #endif

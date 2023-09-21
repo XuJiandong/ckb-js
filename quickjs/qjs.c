@@ -25,9 +25,11 @@
 #include <stdlib.h>
 #include "my_stdlib.h"
 #include <stdio.h>
+#include "my_stdio.h"
 #include <stdarg.h>
 #include <string.h>
 #include <stddef.h>
+#include <stdbool.h>
 #include "cutils.h"
 #include "std_module.h"
 #include "ckb_module.h"
@@ -93,6 +95,23 @@ static int eval_buf(JSContext *ctx, const void *buf, int buf_len, const char *fi
     return ret;
 }
 
+static int run_from_file(JSContext *ctx) {
+    printf("Run from file, local access enabled. For Testing only.");
+    enable_local_access(1);
+    char buf[1024 * 512];
+    int count = read_local_file(buf, sizeof(buf));
+    if (count < 0 || count == sizeof(buf)) {
+        if (count == sizeof(buf)) {
+            printf("Error while reading from file: file too large\n");
+        } else {
+            printf("Error while reading from file: %d\n", count);
+        }
+        return -1;
+    }
+    buf[count] = 0;
+    return eval_buf(ctx, buf, count, "<run_from_file>", 0);
+}
+
 /* also used to initialize the worker context */
 static JSContext *JS_NewCustomContext(JSRuntime *rt) {
     JSContext *ctx;
@@ -105,15 +124,25 @@ static JSContext *JS_NewCustomContext(JSRuntime *rt) {
     return ctx;
 }
 
-int main(int argc, char **argv) {
+static bool s_local_access = false;
+
+static void parse_args(int argc, const char **argv) {
+    for (int i = 0; i < argc; i++) {
+        if (strcmp(argv[i], "-r") == 0) {
+            s_local_access = true;
+        }
+    }
+}
+
+int main(int argc, const char **argv) {
     int err = 0;
     JSRuntime *rt = NULL;
     JSContext *ctx = NULL;
-    char *expr = argv[0];
+    const char *expr = argv[0];
     size_t memory_limit = 0;
     size_t stack_size = 0;
     size_t optind = 1;
-
+    parse_args(argc, argv);
     if (argc == 0) {
         printf("qjs: not enough argv");
         return 1;
@@ -137,13 +166,17 @@ int main(int argc, char **argv) {
     err = js_init_module_ckb(ctx);
     CHECK(err);
 
-    CHECK2(expr != NULL, -1);
-    err = eval_buf(ctx, expr, strlen(expr), "<cmdline>", 0);
-    CHECK(err);
+    if (s_local_access) {
+        // this routine can load and run js files directly from local file system.
+        // Testing only.
+        err = run_from_file(ctx);
+        CHECK(err);
+    } else {
+        CHECK2(expr != NULL, -1);
+        err = eval_buf(ctx, expr, strlen(expr), "<cmdline>", 0);
+        CHECK(err);
+    }
     // No cleanup is needed.
-    // js_std_free_handlers(rt);
-    // JS_FreeContext(ctx);
-    // JS_FreeRuntime(rt);
     return err;
 exit:
     // No cleanup is needed.
