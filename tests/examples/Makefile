@@ -13,7 +13,7 @@ define debug
 	$(CKB-DEBUGGER) --max-cycles $(MAX-CYCLES) ---read-file $(ROOT_DIR)/$(1) --bin $(ROOT_DIR)/../../build/ckb-js-vm -- -r
 endef
 
-test:
+all:
 	$(call run,fib.js)
 	$(call debug,pi_bigint.js)
 
