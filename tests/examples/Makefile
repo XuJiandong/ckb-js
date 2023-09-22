@@ -15,3 +15,5 @@ endef
 
 test:
 	$(call run,fib.js)
+	$(call debug,pi_bigint.js)
+

@@ -98,6 +98,8 @@ double fmax(double x, double y);
 double hypot(double x, double y);
 int signbit(double num);
 
+double ceil(double x);
+
 #ifdef __cplusplus
 }
 #endif
