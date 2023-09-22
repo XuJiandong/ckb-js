@@ -117,10 +117,10 @@ static JSContext *JS_NewCustomContext(JSRuntime *rt) {
     JSContext *ctx;
     ctx = JS_NewContext(rt);
     if (!ctx) return NULL;
-    /* system modules */
-    // TODO
-    // js_init_module_std(ctx, "std");
-    // js_init_module_os(ctx, "os");
+    JS_AddIntrinsicBigFloat(ctx);
+    JS_AddIntrinsicBigDecimal(ctx);
+    JS_AddIntrinsicOperators(ctx);
+    JS_EnableBignumExt(ctx, TRUE);
     return ctx;
 }
 
