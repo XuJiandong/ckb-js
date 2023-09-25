@@ -148,9 +148,6 @@ static int run_from_file_system(JSContext *ctx) {
         return -1;
     }
 
-    const char *main_file_code = NULL;
-    size_t main_file_size = 0;
-    const char *file_name = "<run_from_file>";
     int err = ckb_load_fs(buf, count);
     if (err) {
         printf("ckb load file system failed, rc: %d", err);
@@ -162,11 +159,17 @@ static int run_from_file_system(JSContext *ctx) {
         printf("get main file failed, file name: main.js, rc: %d", err);
         return err;
     }
-    main_file_code = main_file->content;
-    main_file_size = main_file->size;
-    
-    file_name = MAIN_FILE_NAME;
-    return eval_buf(ctx, main_file_code, main_file_size, file_name,
+    if (main_file->size == 0) {
+        printf("main file size is 0");
+        return -1;
+    }
+
+    char file_buf[main_file->size + 1];
+    memcpy(file_buf, main_file->content, main_file->size);
+    file_buf[main_file->size] = 0;
+
+    const char *file_name = MAIN_FILE_NAME;
+    return eval_buf(ctx, file_buf, main_file->size, file_name,
                     JS_EVAL_TYPE_MODULE);
 }
 

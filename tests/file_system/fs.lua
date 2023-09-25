@@ -20,7 +20,6 @@ local function append_file_to_stream(path, stream)
     local s = infile:read("*a")
     infile:close()
     append_to_stream(s, stream)
-    stream:write('\0')
 end
 
 local function append_string_null_to_stream(str, stream)
@@ -48,7 +47,7 @@ local function pack(files, stream)
         append_integer_to_stream(offset, stream)
         length = get_file_size(path)
         append_integer_to_stream(length, stream)
-        offset = offset + length + 1
+        offset = offset + length
     end
 
     for name, path in pairs(files) do

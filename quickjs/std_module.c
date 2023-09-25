@@ -83,9 +83,16 @@ uint8_t *js_load_file(JSContext *ctx, size_t *pbuf_len, const char *filename) {
     if (err) {
         return NULL;
     }
+    if (f->size == 0) {
+        return NULL;
+    }
+
+    uint8_t * buf = js_malloc(ctx, f->size + 1);
+    memcpy(buf, f->content, f->size);
+    buf[f->size] = 0;
 
     *pbuf_len = f->size;
-    return (uint8_t *)f->content;
+    return (uint8_t *)buf;
 }
 
 int js_module_set_import_meta(JSContext *ctx, JSValueConst func_val,
@@ -157,8 +164,7 @@ JSModuleDef *js_module_loader(JSContext *ctx, const char *module_name,
     /* compile the module */
     func_val = JS_Eval(ctx, (char *)buf, buf_len, module_name,
                        JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY);
-    // Here is the cache using ckb_cell_fs, which does not need to be released
-    // js_free(ctx, buf);
+    js_free(ctx, buf);
     if (JS_IsException(func_val)) return NULL;
     /* XXX: could propagate the exception */
     js_module_set_import_meta(ctx, func_val, TRUE, FALSE);
