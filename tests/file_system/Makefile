@@ -8,4 +8,4 @@ build/test_module.bin: tests/file_system/test_module/main.js tests/file_system/t
 	cd tests/file_system/test_module/ && lua ../fs.lua pack ../../../build/test_module.bin main.js fib_module.js
 
 test_module: build/test_module.bin
-		$(CKB-DEBUGGER) --max-cycles $(MAX-CYCLES) ---read-file build/test_module.bin --bin build/ckb-js-vm -- -r -f  2>&1 | fgrep 'Run result: 0'
+		$(CKB-DEBUGGER) --max-cycles $(MAX-CYCLES) ---read-file build/test_module.bin --bin build/ckb-js-vm -- -f  2>&1 | fgrep 'Run result: 0'

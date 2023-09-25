@@ -129,29 +129,43 @@ static int run_from_file(JSContext *ctx) {
         return -1;
     }
 
+    const char *file_name = "<run_from_file>";
+    buf[count] = 0;
+    return eval_buf(ctx, buf, count, file_name, JS_EVAL_TYPE_MODULE);
+}
+
+static int run_from_file_system(JSContext *ctx) {
+    printf("Run from file, local access enabled. For Testing only.");
+    enable_local_access(1);
+    char buf[1024 * 512];
+    int count = read_local_file(buf, sizeof(buf));
+    if (count < 0 || count == sizeof(buf)) {
+        if (count == sizeof(buf)) {
+            printf("Error while reading from file: file too large\n");
+        } else {
+            printf("Error while reading from file: %d\n", count);
+        }
+        return -1;
+    }
+
     const char *main_file_code = NULL;
     size_t main_file_size = 0;
     const char *file_name = "<run_from_file>";
-    if (s_fs_account) {
-        int err = ckb_load_fs(buf, count);
-        if (err) {
-            printf("ckb load file system failed, rc: %d", err);
-            return err;
-        }
-        FSFile *main_file = NULL;
-        err = ckb_get_file(MAIN_FILE_NAME, &main_file);
-        if (err) {
-            printf("get main file failed, file name: main.js, rc: %d", err);
-            return err;
-        }
-        main_file_code = main_file->content;
-        main_file_size = main_file->size;
-        file_name = MAIN_FILE_NAME;
-    } else {
-        buf[count] = 0;
-        main_file_code = buf;
-        main_file_size = count;
+    int err = ckb_load_fs(buf, count);
+    if (err) {
+        printf("ckb load file system failed, rc: %d", err);
+        return err;
     }
+    FSFile *main_file = NULL;
+    err = ckb_get_file(MAIN_FILE_NAME, &main_file);
+    if (err) {
+        printf("get main file failed, file name: main.js, rc: %d", err);
+        return err;
+    }
+    main_file_code = main_file->content;
+    main_file_size = main_file->size;
+    
+    file_name = MAIN_FILE_NAME;
     return eval_buf(ctx, main_file_code, main_file_size, file_name,
                     JS_EVAL_TYPE_MODULE);
 }
@@ -204,6 +218,9 @@ int main(int argc, const char **argv) {
         // system.
         // Testing only.
         err = run_from_file(ctx);
+        CHECK(err);
+    } else if (s_fs_account) {
+        err = run_from_file_system(ctx);
         CHECK(err);
     } else {
         CHECK2(expr != NULL, -1);
