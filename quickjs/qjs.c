@@ -22,17 +22,39 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include <stdlib.h>
-#include "my_stdlib.h"
-#include <stdio.h>
-#include "my_stdio.h"
 #include <stdarg.h>
-#include <string.h>
-#include <stddef.h>
 #include <stdbool.h>
-#include "cutils.h"
-#include "std_module.h"
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "ckb_cell_fs.h"
 #include "ckb_module.h"
+#include "cutils.h"
+#include "my_stdio.h"
+#include "my_stdlib.h"
+#include "my_string.h"
+#include "std_module.h"
+
+static bool s_local_access = false;
+static const char *s_local_main_file = NULL;
+
+static int parse_args(int argc, const char **argv) {
+    for (int i = 0; i < argc; i++) {
+        if (strcmp(argv[i], "-r") == 0) {
+            s_local_access = true;
+        } else if (strcmp(argv[i], "--mainfile") == 0) {
+            if (i + 1 >= argc) {
+                printf("args --mainfile need value");
+                return -1;
+            }
+            i += 1;
+            s_local_main_file = argv[i];
+        }
+    }
+    return 0;
+}
 
 static void js_dump_obj(JSContext *ctx, JSValueConst val) {
     const char *str;
@@ -69,16 +91,17 @@ void js_std_dump_error(JSContext *ctx) {
     JS_FreeValue(ctx, exception_val);
 }
 
-static int eval_buf(JSContext *ctx, const void *buf, int buf_len, const char *filename, int eval_flags) {
+static int eval_buf(JSContext *ctx, const void *buf, int buf_len,
+                    const char *filename, int eval_flags) {
     JSValue val;
     int ret;
 
     if ((eval_flags & JS_EVAL_TYPE_MASK) == JS_EVAL_TYPE_MODULE) {
         /* for the modules, we compile then run to be able to set
            import.meta */
-        val = JS_Eval(ctx, buf, buf_len, filename, eval_flags | JS_EVAL_FLAG_COMPILE_ONLY);
+        val = JS_Eval(ctx, buf, buf_len, filename,
+                      eval_flags | JS_EVAL_FLAG_COMPILE_ONLY);
         if (!JS_IsException(val)) {
-            // TODO:
             // js_module_set_import_meta(ctx, val, TRUE, TRUE);
             val = JS_EvalFunction(ctx, val);
         }
@@ -108,8 +131,33 @@ static int run_from_file(JSContext *ctx) {
         }
         return -1;
     }
-    buf[count] = 0;
-    return eval_buf(ctx, buf, count, "<run_from_file>", 0);
+
+    const char *main_file_code = NULL;
+    size_t main_file_size = 0;
+    const char *file_name = "<run_from_file>";
+    if (s_local_main_file) {
+        int err = ckb_load_fs(buf, count);
+        if (err) {
+            printf("ckb load file system failed, rc: %d", err);
+            return err;
+        }
+        FSFile *main_file = NULL;
+        err = ckb_get_file(s_local_main_file, &main_file);
+        if (err) {
+            printf("get main file failed, file name: %s, rc: %d",
+                   s_local_main_file, err);
+            return err;
+        }
+        main_file_code = main_file->content;
+        main_file_size = main_file->size;
+        file_name = s_local_main_file;
+    } else {
+        buf[count] = 0;
+        main_file_code = buf;
+        main_file_size = count;
+    }
+    return eval_buf(ctx, main_file_code, main_file_size, file_name,
+                    JS_EVAL_TYPE_MODULE);
 }
 
 /* also used to initialize the worker context */
@@ -122,16 +170,6 @@ static JSContext *JS_NewCustomContext(JSRuntime *rt) {
     JS_AddIntrinsicOperators(ctx);
     JS_EnableBignumExt(ctx, TRUE);
     return ctx;
-}
-
-static bool s_local_access = false;
-
-static void parse_args(int argc, const char **argv) {
-    for (int i = 0; i < argc; i++) {
-        if (strcmp(argv[i], "-r") == 0) {
-            s_local_access = true;
-        }
-    }
 }
 
 int main(int argc, const char **argv) {
@@ -160,14 +198,14 @@ int main(int argc, const char **argv) {
     ctx = JS_NewCustomContext(rt);
     CHECK2(ctx != NULL, -1);
     /* loader for ES6 modules */
-    // TODO:
-    // JS_SetModuleLoaderFunc(rt, NULL, js_module_loader, NULL);
+    JS_SetModuleLoaderFunc(rt, NULL, js_module_loader, NULL);
     js_std_add_helpers(ctx, argc - optind, argv + optind);
     err = js_init_module_ckb(ctx);
     CHECK(err);
 
     if (s_local_access) {
-        // this routine can load and run js files directly from local file system.
+        // this routine can load and run js files directly from local file
+        // system.
         // Testing only.
         err = run_from_file(ctx);
         CHECK(err);
