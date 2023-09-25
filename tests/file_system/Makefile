@@ -12,4 +12,4 @@ test_module: build/test_module.bin
 
 
 install_ubuntu:
-	apt install lua
+	sudo apt install lua5.4
