@@ -75,6 +75,7 @@ $(OBJDIR)/impl.o: deps/ckb-c-stdlib/libc/src/impl.c
 test:
 	make -f tests/examples/Makefile
 	make -f tests/basic/Makefile
+	make -f tests/file_system/Makefile
 
 clean:
 	rm -f build/*.o
