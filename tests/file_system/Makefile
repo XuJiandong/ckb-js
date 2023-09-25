@@ -9,3 +9,7 @@ build/test_module.bin: tests/file_system/test_module/main.js tests/file_system/t
 
 test_module: build/test_module.bin
 		$(CKB-DEBUGGER) --max-cycles $(MAX-CYCLES) ---read-file build/test_module.bin --bin build/ckb-js-vm -- -f  2>&1 | fgrep 'Run result: 0'
+
+
+install_ubuntu:
+	apt install lua
