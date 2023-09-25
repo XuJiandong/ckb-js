@@ -38,19 +38,16 @@
 #include "std_module.h"
 
 static bool s_local_access = false;
-static const char *s_local_main_file = NULL;
+static bool s_fs_account = false;
+
+#define MAIN_FILE_NAME "main.js"
 
 static int parse_args(int argc, const char **argv) {
     for (int i = 0; i < argc; i++) {
         if (strcmp(argv[i], "-r") == 0) {
             s_local_access = true;
-        } else if (strcmp(argv[i], "--mainfile") == 0) {
-            if (i + 1 >= argc) {
-                printf("args --mainfile need value");
-                return -1;
-            }
-            i += 1;
-            s_local_main_file = argv[i];
+        } else if (strcmp(argv[i], "-f") == 0) {
+            s_fs_account = true;
         }
     }
     return 0;
@@ -135,22 +132,21 @@ static int run_from_file(JSContext *ctx) {
     const char *main_file_code = NULL;
     size_t main_file_size = 0;
     const char *file_name = "<run_from_file>";
-    if (s_local_main_file) {
+    if (s_fs_account) {
         int err = ckb_load_fs(buf, count);
         if (err) {
             printf("ckb load file system failed, rc: %d", err);
             return err;
         }
         FSFile *main_file = NULL;
-        err = ckb_get_file(s_local_main_file, &main_file);
+        err = ckb_get_file(MAIN_FILE_NAME, &main_file);
         if (err) {
-            printf("get main file failed, file name: %s, rc: %d",
-                   s_local_main_file, err);
+            printf("get main file failed, file name: main.js, rc: %d", err);
             return err;
         }
         main_file_code = main_file->content;
         main_file_size = main_file->size;
-        file_name = s_local_main_file;
+        file_name = MAIN_FILE_NAME;
     } else {
         buf[count] = 0;
         main_file_code = buf;
