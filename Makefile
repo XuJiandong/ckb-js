@@ -76,7 +76,6 @@ test:
 	make -f tests/examples/Makefile
 	make -f tests/basic/Makefile
 	cd tests/ckb_js_tests && make all
-	pwd
 
 clean:
 	rm -f build/*.o

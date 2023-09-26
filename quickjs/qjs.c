@@ -213,7 +213,6 @@ int main(int argc, const char **argv) {
     int err = 0;
     JSRuntime *rt = NULL;
     JSContext *ctx = NULL;
-    const char *expr = argv[0];
     size_t memory_limit = 0;
     size_t stack_size = 0;
     size_t optind = 1;
@@ -244,6 +243,11 @@ int main(int argc, const char **argv) {
             err = run_from_file_system(ctx);
             break;
         case RunJsWithCode:
+            if (argc < 2) {
+                printf("qjs: args -e need code");
+                return -1;
+            }
+            const char *expr = argv[1];
             CHECK2(expr != NULL, -1);
             err = eval_buf(ctx, expr, strlen(expr), "<cmdline>", 0);
             break;
