@@ -151,12 +151,7 @@ int run_frome_file_system_buf(JSContext *ctx, char *buf, size_t buf_size) {
         return -1;
     }
 
-    char file_buf[main_file->size + 1];
-    memcpy(file_buf, main_file->content, main_file->size);
-    file_buf[main_file->size] = 0;
-
-    const char *file_name = MAIN_FILE_NAME;
-    return eval_buf(ctx, file_buf, main_file->size, file_name, JS_EVAL_TYPE_MODULE);
+    return eval_buf(ctx, main_file->content, main_file->size, MAIN_FILE_NAME, JS_EVAL_TYPE_MODULE);
 }
 
 static int run_from_file_system(JSContext *ctx) {
