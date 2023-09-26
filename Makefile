@@ -75,7 +75,8 @@ $(OBJDIR)/impl.o: deps/ckb-c-stdlib/libc/src/impl.c
 test:
 	make -f tests/examples/Makefile
 	make -f tests/basic/Makefile
-	make -f tests/file_system/Makefile
+	cd tests/ckb_js_tests && make all
+	pwd
 
 clean:
 	rm -f build/*.o
@@ -86,6 +87,6 @@ install:
 	wget 'https://github.com/nervosnetwork/ckb-standalone-debugger/releases/download/v0.111.0/ckb-debugger-linux-x64.tar.gz'
 	tar zxvf ckb-debugger-linux-x64.tar.gz
 	mv ckb-debugger ~/.cargo/bin/ckb-debugger
-	make -f tests/file_system/Makefile install_ubuntu
+	make -f tests/ckb_js_tests/Makefile install_ubuntu
 
 .phony: all clean

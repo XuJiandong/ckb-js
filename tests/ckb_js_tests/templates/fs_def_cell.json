@@ -37,7 +37,7 @@
           },
           "type": "{{ def_type js-code-pack }}"
         },
-        "data": "0x{{ data ../../../build/test_module.bin }}"
+        "data": "0x{{ data ../../../build/testdata_fs_modules.bin }}"
       }
     ],
     "header_deps": []
