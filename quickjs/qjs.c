@@ -37,23 +37,46 @@
 #define MAIN_FILE_NAME "main.js"
 
 typedef enum {
-    RunJSTypeNone = 0,
+    RunJsError = 0,
+    RunJsWithCode,
     RunJsWithFile,
     RunJsWithFileSystem,
-    RunJsWithCode,
+
+    RunJsWithDbgFile,
+    RunJsWithDbgFileSystem,
 } RunJSType;
 
 static RunJSType parse_args(int argc, const char **argv) {
+    bool has_r = false;
+    bool has_f = false;
+    bool has_e = false;
+
     for (int i = 0; i < argc; i++) {
         if (strcmp(argv[i], "-r") == 0) {
-            return RunJsWithFile;
+            has_r = true;
         } else if (strcmp(argv[i], "-f") == 0) {
-            return RunJsWithFileSystem;
+            has_f = true;
         } else if (strcmp(argv[i], "-e") == 0) {
-            return RunJsWithCode;
+            has_e = true;
         }
     }
-    return RunJSTypeNone;
+
+    if (has_e) {
+        if (argc < 2 || argv[1] == NULL) return RunJsError;
+        if (has_r || has_f)
+            return RunJsError;
+        else
+            return RunJsWithCode;
+    } else if (has_r) {
+        if (has_f)
+            return RunJsWithDbgFileSystem;
+        else
+            return RunJsWithDbgFile;
+    } else if (has_f) {
+        return RunJsWithFileSystem;
+    } else {
+        return RunJsWithFile;
+    }
 }
 
 static void js_dump_obj(JSContext *ctx, JSValueConst val) {
@@ -117,23 +140,6 @@ static int eval_buf(JSContext *ctx, const void *buf, int buf_len, const char *fi
     return ret;
 }
 
-static int run_from_file(JSContext *ctx) {
-    printf("Run from file, local access enabled. For Testing only.");
-    enable_local_access(1);
-    char buf[1024 * 512];
-    int count = read_local_file(buf, sizeof(buf));
-    if (count < 0 || count == sizeof(buf)) {
-        if (count == sizeof(buf)) {
-            printf("Error while reading from file: file too large\n");
-        } else {
-            printf("Error while reading from file: %d\n", count);
-        }
-        return -1;
-    }
-    buf[count] = 0;
-    return eval_buf(ctx, buf, count, "<run_from_file>", 0);
-}
-
 int run_frome_file_system_buf(JSContext *ctx, char *buf, size_t buf_size) {
     int err = ckb_load_fs(buf, buf_size);
     if (err) {
@@ -154,7 +160,7 @@ int run_frome_file_system_buf(JSContext *ctx, char *buf, size_t buf_size) {
     return eval_buf(ctx, main_file->content, main_file->size, MAIN_FILE_NAME, JS_EVAL_TYPE_MODULE);
 }
 
-static int run_from_file_system(JSContext *ctx) {
+static int run_from_local_file(JSContext *ctx, bool enable_fs) {
     printf("Run from file, local access enabled. For Testing only.");
     enable_local_access(1);
     char buf[1024 * 512];
@@ -167,10 +173,15 @@ static int run_from_file_system(JSContext *ctx) {
         }
         return -1;
     }
-    return run_frome_file_system_buf(ctx, buf, count);
+    if (enable_fs) {
+        return run_frome_file_system_buf(ctx, buf, (size_t)count);
+    } else {
+        buf[count] = 0;
+        return eval_buf(ctx, buf, count, "<run_from_file>", 0);
+    }
 }
 
-static int run_from_cell_data(JSContext *ctx) {
+static int run_from_cell_data(JSContext *ctx, bool enable_fs) {
     int err = 0;
     size_t buf_size = 0;
     size_t index = 0;
@@ -179,14 +190,18 @@ static int run_from_cell_data(JSContext *ctx) {
         return err;
     }
 
-    char buf[buf_size];
+    char buf[buf_size + 1];
     err = load_cell_code(buf_size, index, (uint8_t *)buf);
     if (err) {
         return err;
     }
 
-    // load in file system
-    return run_frome_file_system_buf(ctx, buf, buf_size);
+    if (enable_fs) {
+        return run_frome_file_system_buf(ctx, buf, buf_size);
+    } else {
+        buf[buf_size] = 0;
+        return eval_buf(ctx, buf, buf_size, "<run_from_file>", 0);
+    }
 }
 
 /* also used to initialize the worker context */
@@ -209,6 +224,10 @@ int main(int argc, const char **argv) {
     size_t stack_size = 0;
     size_t optind = 1;
     RunJSType type = parse_args(argc, argv);
+    if (type == RunJsError) {
+        printf("ckb-js: args failed");
+        return 1;
+    }
     rt = JS_NewRuntime();
     if (!rt) {
         printf("qjs: cannot allocate JS runtime\n");
@@ -228,24 +247,24 @@ int main(int argc, const char **argv) {
     CHECK(err);
 
     switch (type) {
+        case RunJsWithCode:
+            err = eval_buf(ctx, argv[1], strlen(argv[1]), "<cmdline>", 0);
+            break;
         case RunJsWithFile:
-            err = run_from_file(ctx);
+            err = run_from_cell_data(ctx, false);
             break;
         case RunJsWithFileSystem:
-            err = run_from_file_system(ctx);
+            err = run_from_cell_data(ctx, true);
             break;
-        case RunJsWithCode:
-            if (argc < 2) {
-                printf("qjs: args -e need code");
-                return -1;
-            }
-            const char *expr = argv[1];
-            CHECK2(expr != NULL, -1);
-            err = eval_buf(ctx, expr, strlen(expr), "<cmdline>", 0);
+        case RunJsWithDbgFile:
+            err = run_from_local_file(ctx, false);
+            break;
+        case RunJsWithDbgFileSystem:
+            err = run_from_local_file(ctx, true);
             break;
         default:
-            err = run_from_cell_data(ctx);
-            break;
+            printf("unknow type: %d", type);
+            return -1;
     }
     CHECK(err);
 
