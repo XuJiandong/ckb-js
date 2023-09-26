@@ -61,7 +61,6 @@ int load_fs(CellFileSystem **fs, void *buf, uint64_t buflen) {
     }
 
     node->count = *(uint32_t *)buf;
-    printf("--- node count: %d", node->count);
     if (node->count == 0) {
         node->files = NULL;
         node->start = NULL;
