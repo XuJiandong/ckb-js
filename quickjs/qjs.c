@@ -130,10 +130,8 @@ static int run_from_file(JSContext *ctx) {
         }
         return -1;
     }
-
-    const char *file_name = "<run_from_file>";
     buf[count] = 0;
-    return eval_buf(ctx, buf, count, file_name, JS_EVAL_TYPE_MODULE);
+    return eval_buf(ctx, buf, count, "<run_from_file>", 0);
 }
 
 int run_frome_file_system_buf(JSContext *ctx, char *buf, size_t buf_size) {

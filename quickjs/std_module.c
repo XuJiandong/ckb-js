@@ -1,18 +1,16 @@
-#include "std_module.h"
-
-#include <limits.h>
-#include <stdarg.h>
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-
-#include "ckb_cell_fs.h"
-#include "ckb_syscall_apis.h"
-#include "cutils.h"
 #include "my_stdlib.h"
+#include <stdio.h>
+#include <stdarg.h>
+#include <string.h>
+#include <stddef.h>
+#include <stdbool.h>
+#include <limits.h>
+#include "cutils.h"
+#include "std_module.h"
+#include "ckb_syscall_apis.h"
 #include "my_string.h"
+#include "ckb_cell_fs.h"
 
 /* console.log */
 static JSValue js_print(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {

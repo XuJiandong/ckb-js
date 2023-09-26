@@ -81,6 +81,7 @@ clean:
 	rm -f build/*.o
 	rm -f build/ckb-js-vm
 	rm -f build/ckb-js-vm.debug
+	cd tests/ckb_js_tests && make clean
 
 install:
 	wget 'https://github.com/nervosnetwork/ckb-standalone-debugger/releases/download/v0.111.0/ckb-debugger-linux-x64.tar.gz'

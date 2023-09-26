@@ -1,10 +1,8 @@
-#include "ckb_module.h"
-
-#include <stdbool.h>
 #include <stdint.h>
-
-#include "ckb_syscalls.h"
+#include <stdbool.h>
+#include "ckb_module.h"
 #include "cutils.h"
+#include "ckb_syscalls.h"
 #include "molecule/blockchain.h"
 #include "molecule/molecule_reader.h"
 
@@ -486,8 +484,7 @@ int js_init_module_ckb(JSContext *ctx) {
     JS_SetPropertyStr(ctx, ckb, "SOURCE_OUTPUT", JS_NewInt64(ctx, CKB_SOURCE_OUTPUT));
     JS_SetPropertyStr(ctx, ckb, "SOURCE_CELL_DEP", JS_NewInt64(ctx, CKB_SOURCE_CELL_DEP));
     JS_SetPropertyStr(ctx, ckb, "SOURCE_HEADER_DEP", JS_NewInt64(ctx, CKB_SOURCE_HEADER_DEP));
-    // Should use bigint. If Int64 is used, when it's too big(> 0xFFFFFFFF), it
-    // is stored as float number.
+    // Should use bigint. If Int64 is used, when it's too big(> 0xFFFFFFFF), it is stored as float number.
     JS_SetPropertyStr(ctx, ckb, "SOURCE_GROUP_INPUT", JS_NewBigUint64(ctx, CKB_SOURCE_GROUP_INPUT));
     JS_SetPropertyStr(ctx, ckb, "SOURCE_GROUP_OUTPUT", JS_NewBigUint64(ctx, CKB_SOURCE_GROUP_OUTPUT));
 
