@@ -179,12 +179,11 @@ static int run_from_cell_data(JSContext *ctx) {
         return err;
     }
 
-    char buf[buf_size + 1];
+    char buf[buf_size];
     err = load_cell_code(buf_size, index, (uint8_t *)buf);
     if (err) {
         return err;
     }
-    buf[buf_size] = 0;
 
     // load in file system
     return run_frome_file_system_buf(ctx, buf, buf_size);

@@ -100,28 +100,7 @@ int js_module_set_import_meta(JSContext *ctx, JSValueConst func_val, JS_BOOL use
     module_name = JS_AtomToCString(ctx, module_name_atom);
     JS_FreeAtom(ctx, module_name_atom);
     if (!module_name) return -1;
-    // There are no overly replicated file systems in ckb now
-    //     if (!strchr(module_name, ':')) {
-    //         strcpy(buf, "file://");
-    // #if !defined(_WIN32)
-    //         /* realpath() cannot be used with modules compiled with qjsc
-    //            because the corresponding module source code is not
-    //            necessarily present */
-    //         if (use_realpath) {
-    //             char *res = realpath(module_name, buf + strlen(buf));
-    //             if (!res) {
-    //                 JS_ThrowTypeError(ctx, "realpath failure");
-    //                 JS_FreeCString(ctx, module_name);
-    //                 return -1;
-    //             }
-    //         } else
-    // #endif
-    //         {
-    //             pstrcat(buf, sizeof(buf), module_name);
-    //         }
-    //     } else {
     pstrcpy(buf, sizeof(buf), module_name);
-    // }
     JS_FreeCString(ctx, module_name);
 
     meta_obj = JS_GetImportMeta(ctx, m);
