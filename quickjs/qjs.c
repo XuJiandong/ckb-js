@@ -40,8 +40,8 @@
 #define MAIN_FILE_NAME "main.js"
 
 typedef enum {
-    RunJSTypeNone,
-    RunJsWithFile = 0,
+    RunJSTypeNone = 0,
+    RunJsWithFile,
     RunJsWithFileSystem,
     RunJsWithCode,
 } RunJSType;
@@ -140,21 +140,8 @@ static int run_from_file(JSContext *ctx) {
     return eval_buf(ctx, buf, count, file_name, JS_EVAL_TYPE_MODULE);
 }
 
-static int run_from_file_system(JSContext *ctx) {
-    printf("Run from file, local access enabled. For Testing only.");
-    enable_local_access(1);
-    char buf[1024 * 512];
-    int count = read_local_file(buf, sizeof(buf));
-    if (count < 0 || count == sizeof(buf)) {
-        if (count == sizeof(buf)) {
-            printf("Error while reading from file: file too large\n");
-        } else {
-            printf("Error while reading from file: %d\n", count);
-        }
-        return -1;
-    }
-
-    int err = ckb_load_fs(buf, count);
+int run_frome_file_system_buf(JSContext *ctx, char *buf, size_t buf_size) {
+    int err = ckb_load_fs(buf, buf_size);
     if (err) {
         printf("ckb load file system failed, rc: %d", err);
         return err;
@@ -179,6 +166,22 @@ static int run_from_file_system(JSContext *ctx) {
                     JS_EVAL_TYPE_MODULE);
 }
 
+static int run_from_file_system(JSContext *ctx) {
+    printf("Run from file, local access enabled. For Testing only.");
+    enable_local_access(1);
+    char buf[1024 * 512];
+    int count = read_local_file(buf, sizeof(buf));
+    if (count < 0 || count == sizeof(buf)) {
+        if (count == sizeof(buf)) {
+            printf("Error while reading from file: file too large\n");
+        } else {
+            printf("Error while reading from file: %d\n", count);
+        }
+        return -1;
+    }
+    return run_frome_file_system_buf(ctx, buf, count);
+}
+
 static int run_from_cell_data(JSContext *ctx) {
     int err = 0;
     size_t buf_size = 0;
@@ -195,8 +198,8 @@ static int run_from_cell_data(JSContext *ctx) {
     }
     buf[buf_size] = 0;
 
-    err = eval_buf(ctx, buf, buf_size, "<cell-data>", JS_EVAL_TYPE_MODULE);
-    return err;
+    // load in file system
+    return run_frome_file_system_buf(ctx, buf, buf_size);
 }
 
 /* also used to initialize the worker context */
@@ -220,10 +223,6 @@ int main(int argc, const char **argv) {
     size_t stack_size = 0;
     size_t optind = 1;
     RunJSType type = parse_args(argc, argv);
-    if (argc == 0) {
-        printf("qjs: not enough argv");
-        return 1;
-    }
     rt = JS_NewRuntime();
     if (!rt) {
         printf("qjs: cannot allocate JS runtime\n");
