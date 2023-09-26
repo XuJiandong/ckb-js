@@ -22,20 +22,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include <stdarg.h>
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-
-#include "ckb_cell_fs.h"
-#include "ckb_module.h"
-#include "cutils.h"
-#include "my_stdio.h"
 #include "my_stdlib.h"
-#include "my_string.h"
+#include <stdio.h>
+#include "my_stdio.h"
+#include <stdarg.h>
+#include <string.h>
+#include <stddef.h>
+#include <stdbool.h>
+#include "cutils.h"
 #include "std_module.h"
+#include "ckb_module.h"
 
 #define MAIN_FILE_NAME "main.js"
 
@@ -94,17 +91,16 @@ void js_std_dump_error(JSContext *ctx) {
     JS_FreeValue(ctx, exception_val);
 }
 
-static int eval_buf(JSContext *ctx, const void *buf, int buf_len,
-                    const char *filename, int eval_flags) {
+static int eval_buf(JSContext *ctx, const void *buf, int buf_len, const char *filename, int eval_flags) {
     JSValue val;
     int ret;
 
     if ((eval_flags & JS_EVAL_TYPE_MASK) == JS_EVAL_TYPE_MODULE) {
         /* for the modules, we compile then run to be able to set
            import.meta */
-        val = JS_Eval(ctx, buf, buf_len, filename,
-                      eval_flags | JS_EVAL_FLAG_COMPILE_ONLY);
+        val = JS_Eval(ctx, buf, buf_len, filename, eval_flags | JS_EVAL_FLAG_COMPILE_ONLY);
         if (!JS_IsException(val)) {
+            // TODO:
             // js_module_set_import_meta(ctx, val, TRUE, TRUE);
             val = JS_EvalFunction(ctx, val);
         }
@@ -162,8 +158,7 @@ int run_frome_file_system_buf(JSContext *ctx, char *buf, size_t buf_size) {
     file_buf[main_file->size] = 0;
 
     const char *file_name = MAIN_FILE_NAME;
-    return eval_buf(ctx, file_buf, main_file->size, file_name,
-                    JS_EVAL_TYPE_MODULE);
+    return eval_buf(ctx, file_buf, main_file->size, file_name, JS_EVAL_TYPE_MODULE);
 }
 
 static int run_from_file_system(JSContext *ctx) {

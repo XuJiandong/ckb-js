@@ -15,8 +15,7 @@
 #include "my_string.h"
 
 /* console.log */
-static JSValue js_print(JSContext *ctx, JSValueConst this_val, int argc,
-                        JSValueConst *argv) {
+static JSValue js_print(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
     for (int i = 0; i < argc; i++) {
         int tag = JS_VALUE_GET_TAG(argv[i]);
         if (JS_TAG_IS_FLOAT64(tag)) {
@@ -33,8 +32,7 @@ static JSValue js_print(JSContext *ctx, JSValueConst this_val, int argc,
     return JS_UNDEFINED;
 }
 
-static JSValue js_assert(JSContext *ctx, JSValueConst this_val, int argc,
-                         JSValueConst *argv) {
+static JSValue js_assert(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
     bool success = JS_ToBool(ctx, argv[0]);
     if (!success) {
         js_print(ctx, this_val, argc - 1, argv + 1);
@@ -51,10 +49,8 @@ void js_std_add_helpers(JSContext *ctx, int argc, const char *argv[]) {
     global_obj = JS_GetGlobalObject(ctx);
 
     console = JS_NewObject(ctx);
-    JS_SetPropertyStr(ctx, console, "log",
-                      JS_NewCFunction(ctx, js_print, "log", 1));
-    JS_SetPropertyStr(ctx, console, "assert",
-                      JS_NewCFunction(ctx, js_assert, "assert", 1));
+    JS_SetPropertyStr(ctx, console, "log", JS_NewCFunction(ctx, js_print, "log", 1));
+    JS_SetPropertyStr(ctx, console, "assert", JS_NewCFunction(ctx, js_assert, "assert", 1));
     JS_SetPropertyStr(ctx, global_obj, "console", console);
 
     /* same methods as the mozilla JS shell */
@@ -66,8 +62,7 @@ void js_std_add_helpers(JSContext *ctx, int argc, const char *argv[]) {
         JS_SetPropertyStr(ctx, global_obj, "scriptArgs", args);
     }
 
-    JS_SetPropertyStr(ctx, global_obj, "print",
-                      JS_NewCFunction(ctx, js_print, "print", 1));
+    JS_SetPropertyStr(ctx, global_obj, "print", JS_NewCFunction(ctx, js_print, "print", 1));
     // TODO:
     // JS_SetPropertyStr(ctx, global_obj, "__loadScript",
     //                   JS_NewCFunction(ctx, js_loadScript, "__loadScript",
@@ -87,7 +82,7 @@ uint8_t *js_load_file(JSContext *ctx, size_t *pbuf_len, const char *filename) {
         return NULL;
     }
 
-    uint8_t * buf = js_malloc(ctx, f->size + 1);
+    uint8_t *buf = js_malloc(ctx, f->size + 1);
     memcpy(buf, f->content, f->size);
     buf[f->size] = 0;
 
@@ -95,8 +90,7 @@ uint8_t *js_load_file(JSContext *ctx, size_t *pbuf_len, const char *filename) {
     return (uint8_t *)buf;
 }
 
-int js_module_set_import_meta(JSContext *ctx, JSValueConst func_val,
-                              JS_BOOL use_realpath, JS_BOOL is_main) {
+int js_module_set_import_meta(JSContext *ctx, JSValueConst func_val, JS_BOOL use_realpath, JS_BOOL is_main) {
     JSModuleDef *m;
     char buf[PATH_MAX + 16];
     JSValue meta_obj;
@@ -138,16 +132,13 @@ int js_module_set_import_meta(JSContext *ctx, JSValueConst func_val,
 
     meta_obj = JS_GetImportMeta(ctx, m);
     if (JS_IsException(meta_obj)) return -1;
-    JS_DefinePropertyValueStr(ctx, meta_obj, "url", JS_NewString(ctx, buf),
-                              JS_PROP_C_W_E);
-    JS_DefinePropertyValueStr(ctx, meta_obj, "main", JS_NewBool(ctx, is_main),
-                              JS_PROP_C_W_E);
+    JS_DefinePropertyValueStr(ctx, meta_obj, "url", JS_NewString(ctx, buf), JS_PROP_C_W_E);
+    JS_DefinePropertyValueStr(ctx, meta_obj, "main", JS_NewBool(ctx, is_main), JS_PROP_C_W_E);
     JS_FreeValue(ctx, meta_obj);
     return 0;
 }
 
-JSModuleDef *js_module_loader(JSContext *ctx, const char *module_name,
-                              void *opaque) {
+JSModuleDef *js_module_loader(JSContext *ctx, const char *module_name, void *opaque) {
     JSModuleDef *m;
 
     size_t buf_len;
@@ -156,14 +147,12 @@ JSModuleDef *js_module_loader(JSContext *ctx, const char *module_name,
 
     buf = js_load_file(ctx, &buf_len, module_name);
     if (!buf) {
-        JS_ThrowReferenceError(ctx, "could not load module filename '%s'",
-                               module_name);
+        JS_ThrowReferenceError(ctx, "could not load module filename '%s'", module_name);
         return NULL;
     }
 
     /* compile the module */
-    func_val = JS_Eval(ctx, (char *)buf, buf_len, module_name,
-                       JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY);
+    func_val = JS_Eval(ctx, (char *)buf, buf_len, module_name, JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY);
     js_free(ctx, buf);
     if (JS_IsException(func_val)) return NULL;
     /* XXX: could propagate the exception */
