@@ -37,20 +37,26 @@
 #include "my_string.h"
 #include "std_module.h"
 
-static bool s_local_access = false;
-static bool s_fs_account = false;
-
 #define MAIN_FILE_NAME "main.js"
 
-static int parse_args(int argc, const char **argv) {
+typedef enum {
+    RunJSTypeNone,
+    RunJsWithFile = 0,
+    RunJsWithFileSystem,
+    RunJsWithCode,
+} RunJSType;
+
+static RunJSType parse_args(int argc, const char **argv) {
     for (int i = 0; i < argc; i++) {
         if (strcmp(argv[i], "-r") == 0) {
-            s_local_access = true;
+            return RunJsWithFile;
         } else if (strcmp(argv[i], "-f") == 0) {
-            s_fs_account = true;
+            return RunJsWithFileSystem;
+        } else if (strcmp(argv[i], "-e") == 0) {
+            return RunJsWithCode;
         }
     }
-    return 0;
+    return RunJSTypeNone;
 }
 
 static void js_dump_obj(JSContext *ctx, JSValueConst val) {
@@ -173,6 +179,26 @@ static int run_from_file_system(JSContext *ctx) {
                     JS_EVAL_TYPE_MODULE);
 }
 
+static int run_from_cell_data(JSContext *ctx) {
+    int err = 0;
+    size_t buf_size = 0;
+    size_t index = 0;
+    err = load_cell_code_info(&buf_size, &index);
+    if (err) {
+        return err;
+    }
+
+    char buf[buf_size + 1];
+    err = load_cell_code(buf_size, index, (uint8_t *)buf);
+    if (err) {
+        return err;
+    }
+    buf[buf_size] = 0;
+
+    err = eval_buf(ctx, buf, buf_size, "<cell-data>", JS_EVAL_TYPE_MODULE);
+    return err;
+}
+
 /* also used to initialize the worker context */
 static JSContext *JS_NewCustomContext(JSRuntime *rt) {
     JSContext *ctx;
@@ -193,7 +219,7 @@ int main(int argc, const char **argv) {
     size_t memory_limit = 0;
     size_t stack_size = 0;
     size_t optind = 1;
-    parse_args(argc, argv);
+    RunJSType type = parse_args(argc, argv);
     if (argc == 0) {
         printf("qjs: not enough argv");
         return 1;
@@ -216,20 +242,23 @@ int main(int argc, const char **argv) {
     err = js_init_module_ckb(ctx);
     CHECK(err);
 
-    if (s_local_access) {
-        // this routine can load and run js files directly from local file
-        // system.
-        // Testing only.
-        err = run_from_file(ctx);
-        CHECK(err);
-    } else if (s_fs_account) {
-        err = run_from_file_system(ctx);
-        CHECK(err);
-    } else {
-        CHECK2(expr != NULL, -1);
-        err = eval_buf(ctx, expr, strlen(expr), "<cmdline>", 0);
-        CHECK(err);
+    switch (type) {
+        case RunJsWithFile:
+            err = run_from_file(ctx);
+            break;
+        case RunJsWithFileSystem:
+            err = run_from_file_system(ctx);
+            break;
+        case RunJsWithCode:
+            CHECK2(expr != NULL, -1);
+            err = eval_buf(ctx, expr, strlen(expr), "<cmdline>", 0);
+            break;
+        default:
+            err = run_from_cell_data(ctx);
+            break;
     }
+    CHECK(err);
+
     // No cleanup is needed.
     return err;
 exit:

@@ -1,15 +1,20 @@
-#include <stdint.h>
-#include <stdbool.h>
 #include "ckb_module.h"
-#include "cutils.h"
+
+#include <stdbool.h>
+#include <stdint.h>
+
 #include "ckb_syscalls.h"
+#include "cutils.h"
+#include "molecule/blockchain.h"
+#include "molecule/molecule_reader.h"
 
 enum SyscallErrorCode {
     SyscallErrorUnknown = 80,
     SyscallErrorMemory = 81,
 };
 
-static JSValue syscall_exit(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+static JSValue syscall_exit(JSContext *ctx, JSValueConst this_val, int argc,
+                            JSValueConst *argv) {
     int32_t status;
     if (JS_ToInt32(ctx, &status, argv[0])) return JS_EXCEPTION;
     ckb_exit((int8_t)status);
@@ -59,7 +64,8 @@ static int _load_tx_hash(void *addr, uint64_t *len, LoadData *data) {
     return ckb_load_tx_hash(addr, len, data->offset);
 }
 
-static JSValue syscall_load_tx_hash(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+static JSValue syscall_load_tx_hash(JSContext *ctx, JSValueConst this_val,
+                                    int argc, JSValueConst *argv) {
     int64_t offset;
     if (JS_ToInt64(ctx, &offset, argv[0])) {
         return JS_EXCEPTION;
@@ -77,7 +83,8 @@ static int _load_transaction(void *addr, uint64_t *len, LoadData *data) {
     return ckb_load_transaction(addr, len, data->offset);
 }
 
-static JSValue syscall_load_transaction(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+static JSValue syscall_load_transaction(JSContext *ctx, JSValueConst this_val,
+                                        int argc, JSValueConst *argv) {
     int64_t offset;
     if (JS_ToInt64(ctx, &offset, argv[0])) {
         return JS_EXCEPTION;
@@ -95,7 +102,8 @@ static int _load_script_hash(void *addr, uint64_t *len, LoadData *data) {
     return ckb_load_script_hash(addr, len, data->offset);
 }
 
-static JSValue syscall_load_script_hash(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+static JSValue syscall_load_script_hash(JSContext *ctx, JSValueConst this_val,
+                                        int argc, JSValueConst *argv) {
     int64_t offset;
     if (JS_ToInt64(ctx, &offset, argv[0])) {
         return JS_EXCEPTION;
@@ -109,9 +117,12 @@ static JSValue syscall_load_script_hash(JSContext *ctx, JSValueConst this_val, i
     return syscall_load(ctx, &data);
 }
 
-static int _load_script(void *addr, uint64_t *len, LoadData *data) { return ckb_load_script(addr, len, data->offset); }
+static int _load_script(void *addr, uint64_t *len, LoadData *data) {
+    return ckb_load_script(addr, len, data->offset);
+}
 
-static JSValue syscall_load_script(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+static JSValue syscall_load_script(JSContext *ctx, JSValueConst this_val,
+                                   int argc, JSValueConst *argv) {
     int64_t offset;
     if (JS_ToInt64(ctx, &offset, argv[0])) {
         return JS_EXCEPTION;
@@ -125,7 +136,8 @@ static JSValue syscall_load_script(JSContext *ctx, JSValueConst this_val, int ar
     return syscall_load(ctx, &data);
 }
 
-static JSValue syscall_debug(JSContext *ctx, JSValueConst this_value, int argc, JSValueConst *argv) {
+static JSValue syscall_debug(JSContext *ctx, JSValueConst this_value, int argc,
+                             JSValueConst *argv) {
     const char *str = JS_ToCString(ctx, argv[0]);
     ckb_debug(str);
     return JS_UNDEFINED;
@@ -135,7 +147,8 @@ static int _load_cell(void *addr, uint64_t *len, LoadData *data) {
     return ckb_load_cell(addr, len, data->offset, data->index, data->source);
 }
 
-static JSValue syscall_load_cell(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+static JSValue syscall_load_cell(JSContext *ctx, JSValueConst this_val,
+                                 int argc, JSValueConst *argv) {
     int64_t offset;
     if (JS_ToInt64(ctx, &offset, argv[0])) {
         return JS_EXCEPTION;
@@ -164,7 +177,8 @@ static int _load_input(void *addr, uint64_t *len, LoadData *data) {
     return ckb_load_input(addr, len, data->offset, data->index, data->source);
 }
 
-static JSValue syscall_load_input(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+static JSValue syscall_load_input(JSContext *ctx, JSValueConst this_val,
+                                  int argc, JSValueConst *argv) {
     int64_t offset;
     if (JS_ToInt64(ctx, &offset, argv[0])) {
         return JS_EXCEPTION;
@@ -193,7 +207,8 @@ static int _load_header(void *addr, uint64_t *len, LoadData *data) {
     return ckb_load_header(addr, len, data->offset, data->index, data->source);
 }
 
-static JSValue syscall_load_header(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+static JSValue syscall_load_header(JSContext *ctx, JSValueConst this_val,
+                                   int argc, JSValueConst *argv) {
     int64_t offset;
     if (JS_ToInt64(ctx, &offset, argv[0])) {
         return JS_EXCEPTION;
@@ -222,7 +237,8 @@ static int _load_witness(void *addr, uint64_t *len, LoadData *data) {
     return ckb_load_witness(addr, len, data->offset, data->index, data->source);
 }
 
-static JSValue syscall_load_witness(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+static JSValue syscall_load_witness(JSContext *ctx, JSValueConst this_val,
+                                    int argc, JSValueConst *argv) {
     int64_t offset;
     if (JS_ToInt64(ctx, &offset, argv[0])) {
         return JS_EXCEPTION;
@@ -248,10 +264,12 @@ static JSValue syscall_load_witness(JSContext *ctx, JSValueConst this_val, int a
 }
 
 static int _load_cell_data(void *addr, uint64_t *len, LoadData *data) {
-    return ckb_load_cell_data(addr, len, data->offset, data->index, data->source);
+    return ckb_load_cell_data(addr, len, data->offset, data->index,
+                              data->source);
 }
 
-static JSValue syscall_load_cell_data(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+static JSValue syscall_load_cell_data(JSContext *ctx, JSValueConst this_val,
+                                      int argc, JSValueConst *argv) {
     int64_t offset;
     if (JS_ToInt64(ctx, &offset, argv[0])) {
         return JS_EXCEPTION;
@@ -277,10 +295,12 @@ static JSValue syscall_load_cell_data(JSContext *ctx, JSValueConst this_val, int
 }
 
 static int _load_cell_by_field(void *addr, uint64_t *len, LoadData *data) {
-    return ckb_load_cell_by_field(addr, len, data->offset, data->index, data->source, data->field);
+    return ckb_load_cell_by_field(addr, len, data->offset, data->index,
+                                  data->source, data->field);
 }
 
-static JSValue syscall_load_cell_by_field(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+static JSValue syscall_load_cell_by_field(JSContext *ctx, JSValueConst this_val,
+                                          int argc, JSValueConst *argv) {
     int64_t offset;
     if (JS_ToInt64(ctx, &offset, argv[0])) {
         return JS_EXCEPTION;
@@ -311,10 +331,13 @@ static JSValue syscall_load_cell_by_field(JSContext *ctx, JSValueConst this_val,
 }
 
 static int _load_header_by_field(void *addr, uint64_t *len, LoadData *data) {
-    return ckb_load_header_by_field(addr, len, data->offset, data->index, data->source, data->field);
+    return ckb_load_header_by_field(addr, len, data->offset, data->index,
+                                    data->source, data->field);
 }
 
-static JSValue syscall_load_header_by_field(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+static JSValue syscall_load_header_by_field(JSContext *ctx,
+                                            JSValueConst this_val, int argc,
+                                            JSValueConst *argv) {
     int64_t offset;
     if (JS_ToInt64(ctx, &offset, argv[0])) {
         return JS_EXCEPTION;
@@ -345,10 +368,13 @@ static JSValue syscall_load_header_by_field(JSContext *ctx, JSValueConst this_va
 }
 
 static int _load_input_by_field(void *addr, uint64_t *len, LoadData *data) {
-    return ckb_load_input_by_field(addr, len, data->offset, data->index, data->source, data->field);
+    return ckb_load_input_by_field(addr, len, data->offset, data->index,
+                                   data->source, data->field);
 }
 
-static JSValue syscall_load_input_by_field(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+static JSValue syscall_load_input_by_field(JSContext *ctx,
+                                           JSValueConst this_val, int argc,
+                                           JSValueConst *argv) {
     int64_t offset;
     if (JS_ToInt64(ctx, &offset, argv[0])) {
         return JS_EXCEPTION;
@@ -378,17 +404,20 @@ static JSValue syscall_load_input_by_field(JSContext *ctx, JSValueConst this_val
     return syscall_load(ctx, &data);
 }
 
-static JSValue syscall_vm_version(JSContext *ctx, JSValueConst this_value, int argc, JSValueConst *argv) {
+static JSValue syscall_vm_version(JSContext *ctx, JSValueConst this_value,
+                                  int argc, JSValueConst *argv) {
     int32_t version = ckb_vm_version();
     return JS_NewInt32(ctx, version);
 }
 
-static JSValue syscall_current_cycles(JSContext *ctx, JSValueConst this_value, int argc, JSValueConst *argv) {
+static JSValue syscall_current_cycles(JSContext *ctx, JSValueConst this_value,
+                                      int argc, JSValueConst *argv) {
     uint64_t cycles = ckb_current_cycles();
     return JS_NewInt64(ctx, cycles);
 }
 
-static JSValue syscall_exec_cell(JSContext *ctx, JSValueConst this_value, int argc, JSValueConst *argv) {
+static JSValue syscall_exec_cell(JSContext *ctx, JSValueConst this_value,
+                                 int argc, JSValueConst *argv) {
     const size_t argv_offset = 4;
     int err = 0;
     size_t code_hash_len = 0;
@@ -412,7 +441,8 @@ static JSValue syscall_exec_cell(JSContext *ctx, JSValueConst this_value, int ar
     for (int i = argv_offset; i < argc; i++) {
         passed_argv[i - argv_offset] = JS_ToCString(ctx, argv[i]);
     }
-    ckb_exec_cell(code_hash, (uint8_t)hash_type, offset, length, argc - argv_offset, passed_argv);
+    ckb_exec_cell(code_hash, (uint8_t)hash_type, offset, length,
+                  argc - argv_offset, passed_argv);
     // never reach here
 exit:
     if (err != 0) {
@@ -455,53 +485,168 @@ int js_init_module_ckb(JSContext *ctx) {
     global_obj = JS_GetGlobalObject(ctx);
     ckb = JS_NewObject(ctx);
 
-    JS_SetPropertyStr(ctx, ckb, "exit", JS_NewCFunction(ctx, syscall_exit, "exit", 1));
-    JS_SetPropertyStr(ctx, ckb, "load_tx_hash", JS_NewCFunction(ctx, syscall_load_tx_hash, "load_tx_hash", 1));
-    JS_SetPropertyStr(ctx, ckb, "load_transaction",
-                      JS_NewCFunction(ctx, syscall_load_transaction, "load_transaction", 1));
-    JS_SetPropertyStr(ctx, ckb, "load_script_hash",
-                      JS_NewCFunction(ctx, syscall_load_script_hash, "load_script_hash", 1));
-    JS_SetPropertyStr(ctx, ckb, "load_script", JS_NewCFunction(ctx, syscall_load_script, "load_script", 1));
-    JS_SetPropertyStr(ctx, ckb, "debug", JS_NewCFunction(ctx, syscall_debug, "debug", 1));
-    JS_SetPropertyStr(ctx, ckb, "load_cell", JS_NewCFunction(ctx, syscall_load_cell, "load_cell", 3));
-    JS_SetPropertyStr(ctx, ckb, "load_input", JS_NewCFunction(ctx, syscall_load_input, "load_input", 3));
-    JS_SetPropertyStr(ctx, ckb, "load_header", JS_NewCFunction(ctx, syscall_load_header, "load_header", 3));
-    JS_SetPropertyStr(ctx, ckb, "load_witness", JS_NewCFunction(ctx, syscall_load_witness, "load_witness", 3));
-    JS_SetPropertyStr(ctx, ckb, "load_cell_data", JS_NewCFunction(ctx, syscall_load_cell_data, "load_cell_data", 3));
+    JS_SetPropertyStr(ctx, ckb, "exit",
+                      JS_NewCFunction(ctx, syscall_exit, "exit", 1));
+    JS_SetPropertyStr(
+        ctx, ckb, "load_tx_hash",
+        JS_NewCFunction(ctx, syscall_load_tx_hash, "load_tx_hash", 1));
+    JS_SetPropertyStr(
+        ctx, ckb, "load_transaction",
+        JS_NewCFunction(ctx, syscall_load_transaction, "load_transaction", 1));
+    JS_SetPropertyStr(
+        ctx, ckb, "load_script_hash",
+        JS_NewCFunction(ctx, syscall_load_script_hash, "load_script_hash", 1));
+    JS_SetPropertyStr(
+        ctx, ckb, "load_script",
+        JS_NewCFunction(ctx, syscall_load_script, "load_script", 1));
+    JS_SetPropertyStr(ctx, ckb, "debug",
+                      JS_NewCFunction(ctx, syscall_debug, "debug", 1));
+    JS_SetPropertyStr(ctx, ckb, "load_cell",
+                      JS_NewCFunction(ctx, syscall_load_cell, "load_cell", 3));
+    JS_SetPropertyStr(
+        ctx, ckb, "load_input",
+        JS_NewCFunction(ctx, syscall_load_input, "load_input", 3));
+    JS_SetPropertyStr(
+        ctx, ckb, "load_header",
+        JS_NewCFunction(ctx, syscall_load_header, "load_header", 3));
+    JS_SetPropertyStr(
+        ctx, ckb, "load_witness",
+        JS_NewCFunction(ctx, syscall_load_witness, "load_witness", 3));
+    JS_SetPropertyStr(
+        ctx, ckb, "load_cell_data",
+        JS_NewCFunction(ctx, syscall_load_cell_data, "load_cell_data", 3));
     JS_SetPropertyStr(ctx, ckb, "load_cell_by_field",
-                      JS_NewCFunction(ctx, syscall_load_cell_by_field, "load_cell_by_field", 4));
+                      JS_NewCFunction(ctx, syscall_load_cell_by_field,
+                                      "load_cell_by_field", 4));
     JS_SetPropertyStr(ctx, ckb, "load_header_by_field",
-                      JS_NewCFunction(ctx, syscall_load_header_by_field, "load_header_by_field", 4));
+                      JS_NewCFunction(ctx, syscall_load_header_by_field,
+                                      "load_header_by_field", 4));
     JS_SetPropertyStr(ctx, ckb, "load_input_by_field",
-                      JS_NewCFunction(ctx, syscall_load_input_by_field, "load_input_by_field", 4));
-    JS_SetPropertyStr(ctx, ckb, "vm_version", JS_NewCFunction(ctx, syscall_vm_version, "vm_version", 0));
-    JS_SetPropertyStr(ctx, ckb, "current_cycles", JS_NewCFunction(ctx, syscall_current_cycles, "current_cycles", 0));
-    JS_SetPropertyStr(ctx, ckb, "exec_cell", JS_NewCFunction(ctx, syscall_exec_cell, "exec_cell", 4));
+                      JS_NewCFunction(ctx, syscall_load_input_by_field,
+                                      "load_input_by_field", 4));
+    JS_SetPropertyStr(
+        ctx, ckb, "vm_version",
+        JS_NewCFunction(ctx, syscall_vm_version, "vm_version", 0));
+    JS_SetPropertyStr(
+        ctx, ckb, "current_cycles",
+        JS_NewCFunction(ctx, syscall_current_cycles, "current_cycles", 0));
+    JS_SetPropertyStr(ctx, ckb, "exec_cell",
+                      JS_NewCFunction(ctx, syscall_exec_cell, "exec_cell", 4));
 
-    JS_SetPropertyStr(ctx, ckb, "SOURCE_INPUT", JS_NewInt64(ctx, CKB_SOURCE_INPUT));
-    JS_SetPropertyStr(ctx, ckb, "SOURCE_OUTPUT", JS_NewInt64(ctx, CKB_SOURCE_OUTPUT));
-    JS_SetPropertyStr(ctx, ckb, "SOURCE_CELL_DEP", JS_NewInt64(ctx, CKB_SOURCE_CELL_DEP));
-    JS_SetPropertyStr(ctx, ckb, "SOURCE_HEADER_DEP", JS_NewInt64(ctx, CKB_SOURCE_HEADER_DEP));
-    // Should use bigint. If Int64 is used, when it's too big(> 0xFFFFFFFF), it is stored as float number.
-    JS_SetPropertyStr(ctx, ckb, "SOURCE_GROUP_INPUT", JS_NewBigUint64(ctx, CKB_SOURCE_GROUP_INPUT));
-    JS_SetPropertyStr(ctx, ckb, "SOURCE_GROUP_OUTPUT", JS_NewBigUint64(ctx, CKB_SOURCE_GROUP_OUTPUT));
+    JS_SetPropertyStr(ctx, ckb, "SOURCE_INPUT",
+                      JS_NewInt64(ctx, CKB_SOURCE_INPUT));
+    JS_SetPropertyStr(ctx, ckb, "SOURCE_OUTPUT",
+                      JS_NewInt64(ctx, CKB_SOURCE_OUTPUT));
+    JS_SetPropertyStr(ctx, ckb, "SOURCE_CELL_DEP",
+                      JS_NewInt64(ctx, CKB_SOURCE_CELL_DEP));
+    JS_SetPropertyStr(ctx, ckb, "SOURCE_HEADER_DEP",
+                      JS_NewInt64(ctx, CKB_SOURCE_HEADER_DEP));
+    // Should use bigint. If Int64 is used, when it's too big(> 0xFFFFFFFF), it
+    // is stored as float number.
+    JS_SetPropertyStr(ctx, ckb, "SOURCE_GROUP_INPUT",
+                      JS_NewBigUint64(ctx, CKB_SOURCE_GROUP_INPUT));
+    JS_SetPropertyStr(ctx, ckb, "SOURCE_GROUP_OUTPUT",
+                      JS_NewBigUint64(ctx, CKB_SOURCE_GROUP_OUTPUT));
 
-    JS_SetPropertyStr(ctx, ckb, "CELL_FIELD_CAPACITY", JS_NewInt64(ctx, CKB_CELL_FIELD_CAPACITY));
-    JS_SetPropertyStr(ctx, ckb, "CELL_FIELD_DATA_HASH", JS_NewInt64(ctx, CKB_CELL_FIELD_DATA_HASH));
-    JS_SetPropertyStr(ctx, ckb, "CELL_FIELD_LOCK", JS_NewInt64(ctx, CKB_CELL_FIELD_LOCK));
-    JS_SetPropertyStr(ctx, ckb, "CELL_FIELD_LOCK_HASH", JS_NewInt64(ctx, CKB_CELL_FIELD_LOCK_HASH));
-    JS_SetPropertyStr(ctx, ckb, "CELL_FIELD_TYPE", JS_NewInt64(ctx, CKB_CELL_FIELD_TYPE));
-    JS_SetPropertyStr(ctx, ckb, "CELL_FIELD_TYPE_HASH", JS_NewInt64(ctx, CKB_CELL_FIELD_TYPE_HASH));
-    JS_SetPropertyStr(ctx, ckb, "CELL_FIELD_OCCUPIED_CAPACITY", JS_NewInt64(ctx, CKB_CELL_FIELD_OCCUPIED_CAPACITY));
+    JS_SetPropertyStr(ctx, ckb, "CELL_FIELD_CAPACITY",
+                      JS_NewInt64(ctx, CKB_CELL_FIELD_CAPACITY));
+    JS_SetPropertyStr(ctx, ckb, "CELL_FIELD_DATA_HASH",
+                      JS_NewInt64(ctx, CKB_CELL_FIELD_DATA_HASH));
+    JS_SetPropertyStr(ctx, ckb, "CELL_FIELD_LOCK",
+                      JS_NewInt64(ctx, CKB_CELL_FIELD_LOCK));
+    JS_SetPropertyStr(ctx, ckb, "CELL_FIELD_LOCK_HASH",
+                      JS_NewInt64(ctx, CKB_CELL_FIELD_LOCK_HASH));
+    JS_SetPropertyStr(ctx, ckb, "CELL_FIELD_TYPE",
+                      JS_NewInt64(ctx, CKB_CELL_FIELD_TYPE));
+    JS_SetPropertyStr(ctx, ckb, "CELL_FIELD_TYPE_HASH",
+                      JS_NewInt64(ctx, CKB_CELL_FIELD_TYPE_HASH));
+    JS_SetPropertyStr(ctx, ckb, "CELL_FIELD_OCCUPIED_CAPACITY",
+                      JS_NewInt64(ctx, CKB_CELL_FIELD_OCCUPIED_CAPACITY));
 
-    JS_SetPropertyStr(ctx, ckb, "HEADER_FIELD_EPOCH_NUMBER", JS_NewInt64(ctx, CKB_HEADER_FIELD_EPOCH_NUMBER));
-    JS_SetPropertyStr(ctx, ckb, "HEADER_FIELD_EPOCH_START_BLOCK_NUMBER",
-                      JS_NewInt64(ctx, CKB_HEADER_FIELD_EPOCH_START_BLOCK_NUMBER));
-    JS_SetPropertyStr(ctx, ckb, "HEADER_FIELD_EPOCH_LENGTH", JS_NewInt64(ctx, CKB_HEADER_FIELD_EPOCH_LENGTH));
-    JS_SetPropertyStr(ctx, ckb, "INPUT_FIELD_OUT_POINT", JS_NewInt64(ctx, CKB_INPUT_FIELD_OUT_POINT));
-    JS_SetPropertyStr(ctx, ckb, "INPUT_FIELD_SINCE", JS_NewInt64(ctx, CKB_INPUT_FIELD_SINCE));
+    JS_SetPropertyStr(ctx, ckb, "HEADER_FIELD_EPOCH_NUMBER",
+                      JS_NewInt64(ctx, CKB_HEADER_FIELD_EPOCH_NUMBER));
+    JS_SetPropertyStr(
+        ctx, ckb, "HEADER_FIELD_EPOCH_START_BLOCK_NUMBER",
+        JS_NewInt64(ctx, CKB_HEADER_FIELD_EPOCH_START_BLOCK_NUMBER));
+    JS_SetPropertyStr(ctx, ckb, "HEADER_FIELD_EPOCH_LENGTH",
+                      JS_NewInt64(ctx, CKB_HEADER_FIELD_EPOCH_LENGTH));
+    JS_SetPropertyStr(ctx, ckb, "INPUT_FIELD_OUT_POINT",
+                      JS_NewInt64(ctx, CKB_INPUT_FIELD_OUT_POINT));
+    JS_SetPropertyStr(ctx, ckb, "INPUT_FIELD_SINCE",
+                      JS_NewInt64(ctx, CKB_INPUT_FIELD_SINCE));
 
     JS_SetPropertyStr(ctx, global_obj, "ckb", ckb);
     JS_FreeValue(ctx, global_obj);
+    return 0;
+}
+
+#define SCRIPT_SIZE 32768
+#define JS_LOADER_ARGS_SIZE 2
+#define BLAKE2B_BLOCK_SIZE 32
+
+int load_cell_code_info(size_t *buf_size, size_t *index) {
+    unsigned char script[SCRIPT_SIZE];
+    uint64_t len = SCRIPT_SIZE;
+    int ret = ckb_load_script(script, &len, 0);
+    if (ret) {
+        printf("Error while loading script: %d", ret);
+        return -1;
+    }
+    if (len > SCRIPT_SIZE) {
+        return -1;
+    }
+    mol_seg_t script_seg;
+    script_seg.ptr = (uint8_t *)script;
+    script_seg.size = len;
+
+    if (MolReader_Script_verify(&script_seg, false) != MOL_OK) {
+        return -1;
+    }
+
+    // The script arguments are in the following format
+    // <lua loader args, 2 bytes> <data, variable length>
+    mol_seg_t args_seg = MolReader_Script_get_args(&script_seg);
+    mol_seg_t args_bytes_seg = MolReader_Bytes_raw_bytes(&args_seg);
+    if (args_bytes_seg.size < JS_LOADER_ARGS_SIZE) {
+        return -1;
+    }
+
+    // Loading lua code from dependent cell with code hash and hash type
+    // The script arguments are in the following format
+    // <lua loader args, 2 bytes> <code hash of lua code, 32 bytes>
+    // <hash type of lua code, 1 byte>
+    if (args_bytes_seg.size < JS_LOADER_ARGS_SIZE + BLAKE2B_BLOCK_SIZE + 1) {
+        return -1;
+    }
+    uint8_t *code_hash = args_bytes_seg.ptr + JS_LOADER_ARGS_SIZE;
+    uint8_t hash_type =
+        *(args_bytes_seg.ptr + JS_LOADER_ARGS_SIZE + BLAKE2B_BLOCK_SIZE);
+
+    *index = 0;
+    ret = ckb_look_for_dep_with_hash2(code_hash, hash_type, index);
+    if (ret) {
+        printf("Error while looking for dep: %d\n", ret);
+        return -1;
+    }
+
+    *buf_size = 0;
+    ret = ckb_load_cell_data(NULL, buf_size, 0, *index, CKB_SOURCE_CELL_DEP);
+    if (ret) {
+        printf("Error while loading cell data: %d\n", ret);
+        return -1;
+    }
+    if (*buf_size == 0) {
+        return -1;
+    }
+
+    return 0;
+}
+
+int load_cell_code(size_t buf_size, size_t index, uint8_t *buf) {
+    int ret = ckb_load_cell_data(buf, &buf_size, 0, index, CKB_SOURCE_CELL_DEP);
+    if (ret) {
+        printf("Error while loading cell data: %d\n", ret);
+        return -1;
+    }
     return 0;
 }
