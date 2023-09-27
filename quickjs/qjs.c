@@ -142,22 +142,17 @@ static int eval_buf(JSContext *ctx, const void *buf, int buf_len, const char *fi
 
 int run_frome_file_system_buf(JSContext *ctx, char *buf, size_t buf_size) {
     int err = ckb_load_fs(buf, buf_size);
-    if (err) {
-        printf("ckb load file system failed, rc: %d", err);
-        return err;
-    }
+    CHECK(err);
+
     FSFile *main_file = NULL;
     err = ckb_get_file(MAIN_FILE_NAME, &main_file);
-    if (err) {
-        printf("get main file failed, file name: main.js, rc: %d", err);
-        return err;
-    }
-    if (main_file->size == 0) {
-        printf("main file size is 0");
-        return -1;
-    }
+    CHECK(err);
+    CHECK2(main_file->size > 0, -1);
+    err = eval_buf(ctx, main_file->content, main_file->size, MAIN_FILE_NAME, JS_EVAL_TYPE_MODULE);
+    CHECK(err);
 
-    return eval_buf(ctx, main_file->content, main_file->size, MAIN_FILE_NAME, JS_EVAL_TYPE_MODULE);
+exit:
+    return err;
 }
 
 static int run_from_local_file(JSContext *ctx, bool enable_fs) {
@@ -226,12 +221,12 @@ int main(int argc, const char **argv) {
     RunJSType type = parse_args(argc, argv);
     if (type == RunJsError) {
         printf("ckb-js: args failed");
-        return 1;
+        return -1;
     }
     rt = JS_NewRuntime();
     if (!rt) {
         printf("qjs: cannot allocate JS runtime\n");
-        return 2;
+        return -2;
     }
     if (memory_limit != 0) JS_SetMemoryLimit(rt, memory_limit);
     if (stack_size != 0) JS_SetMaxStackSize(rt, stack_size);
@@ -267,9 +262,6 @@ int main(int argc, const char **argv) {
             return -1;
     }
     CHECK(err);
-
-    // No cleanup is needed.
-    return err;
 exit:
     // No cleanup is needed.
     // js_std_free_handlers(rt);
