@@ -5,9 +5,12 @@
 #include <string.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include <limits.h>
 #include "cutils.h"
 #include "std_module.h"
 #include "ckb_syscall_apis.h"
+#include "my_string.h"
+#include "ckb_cell_fs.h"
 
 /* console.log */
 static JSValue js_print(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
@@ -64,4 +67,71 @@ void js_std_add_helpers(JSContext *ctx, int argc, const char *argv[]) {
     //                   1));
 
     JS_FreeValue(ctx, global_obj);
+}
+
+uint8_t *js_load_file(JSContext *ctx, size_t *pbuf_len, const char *filename) {
+    FSFile *f = NULL;
+
+    int err = ckb_get_file(filename, &f);
+    if (err) {
+        return NULL;
+    }
+    if (f->size == 0) {
+        return NULL;
+    }
+
+    *pbuf_len = f->size;
+    return (uint8_t *)f->content;
+}
+
+int js_module_set_import_meta(JSContext *ctx, JSValueConst func_val, JS_BOOL use_realpath, JS_BOOL is_main) {
+    JSModuleDef *m;
+    char buf[PATH_MAX + 16];
+    JSValue meta_obj;
+    JSAtom module_name_atom;
+    const char *module_name;
+
+    if (JS_VALUE_GET_TAG(func_val) != JS_TAG_MODULE) {
+        return -1;
+    }
+    m = JS_VALUE_GET_PTR(func_val);
+
+    module_name_atom = JS_GetModuleName(ctx, m);
+    module_name = JS_AtomToCString(ctx, module_name_atom);
+    JS_FreeAtom(ctx, module_name_atom);
+    if (!module_name) return -1;
+    pstrcpy(buf, sizeof(buf), module_name);
+    JS_FreeCString(ctx, module_name);
+
+    meta_obj = JS_GetImportMeta(ctx, m);
+    if (JS_IsException(meta_obj)) return -1;
+    JS_DefinePropertyValueStr(ctx, meta_obj, "url", JS_NewString(ctx, buf), JS_PROP_C_W_E);
+    JS_DefinePropertyValueStr(ctx, meta_obj, "main", JS_NewBool(ctx, is_main), JS_PROP_C_W_E);
+    JS_FreeValue(ctx, meta_obj);
+    return 0;
+}
+
+JSModuleDef *js_module_loader(JSContext *ctx, const char *module_name, void *opaque) {
+    JSModuleDef *m;
+
+    size_t buf_len;
+    uint8_t *buf;
+    JSValue func_val;
+
+    buf = js_load_file(ctx, &buf_len, module_name);
+    if (!buf) {
+        JS_ThrowReferenceError(ctx, "could not load module filename '%s'", module_name);
+        return NULL;
+    }
+
+    /* compile the module */
+    func_val = JS_Eval(ctx, (char *)buf, buf_len, module_name, JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY);
+    // js_free(ctx, buf);
+    if (JS_IsException(func_val)) return NULL;
+    /* XXX: could propagate the exception */
+    js_module_set_import_meta(ctx, func_val, TRUE, FALSE);
+    /* the module is already referenced, so we must free it */
+    m = JS_VALUE_GET_PTR(func_val);
+    JS_FreeValue(ctx, func_val);
+    return m;
 }

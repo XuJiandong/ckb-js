@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <stddef.h>
 
 #include "ckb_cell_fs.h"
 

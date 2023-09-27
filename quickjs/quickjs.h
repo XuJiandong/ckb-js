@@ -25,6 +25,7 @@
 #ifndef QUICKJS_H
 #define QUICKJS_H
 
+#include <stddef.h>
 #include <stdio.h>
 #include <stdint.h>
 #include "my_stdint.h"

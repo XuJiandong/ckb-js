@@ -38,7 +38,7 @@ LDFLAGS += -Ldeps/compiler-rt-builtins-riscv/build -lcompiler-rt
 OBJDIR=build
 
 QJS_OBJS=$(OBJDIR)/qjs.o $(OBJDIR)/quickjs.o $(OBJDIR)/libregexp.o $(OBJDIR)/libunicode.o \
-		$(OBJDIR)/cutils.o $(OBJDIR)/mocked.o $(OBJDIR)/std_module.o $(OBJDIR)/ckb_module.o $(OBJDIR)/libbf.o
+		$(OBJDIR)/cutils.o $(OBJDIR)/mocked.o $(OBJDIR)/std_module.o $(OBJDIR)/ckb_module.o $(OBJDIR)/ckb_cell_fs.o $(OBJDIR)/libbf.o
 
 STD_OBJS=$(OBJDIR)/string_impl.o $(OBJDIR)/malloc_impl.o $(OBJDIR)/math_impl.o \
 		$(OBJDIR)/math_log_impl.o $(OBJDIR)/math_pow_impl.o $(OBJDIR)/printf_impl.o $(OBJDIR)/stdio_impl.o \
@@ -64,6 +64,10 @@ $(OBJDIR)/%.o: include/c-stdlib/src/%.c
 	@echo build $<
 	@$(CC) $(CFLAGS) -c -o $@ $<
 
+$(OBJDIR)/%.o: include/%.c
+	@echo build $<
+	@$(CC) $(CFLAGS) -c -o $@ $<
+
 $(OBJDIR)/impl.o: deps/ckb-c-stdlib/libc/src/impl.c
 	@echo build $<
 	@$(CC) $(filter-out -DCKB_DECLARATION_ONLY, $(CFLAGS)) -c -o $@ $<
@@ -71,15 +75,18 @@ $(OBJDIR)/impl.o: deps/ckb-c-stdlib/libc/src/impl.c
 test:
 	make -f tests/examples/Makefile
 	make -f tests/basic/Makefile
+	cd tests/ckb_js_tests && make all
 
 clean:
 	rm -f build/*.o
 	rm -f build/ckb-js-vm
 	rm -f build/ckb-js-vm.debug
+	cd tests/ckb_js_tests && make clean
 
 install:
 	wget 'https://github.com/nervosnetwork/ckb-standalone-debugger/releases/download/v0.111.0/ckb-debugger-linux-x64.tar.gz'
 	tar zxvf ckb-debugger-linux-x64.tar.gz
 	mv ckb-debugger ~/.cargo/bin/ckb-debugger
+	make -f tests/ckb_js_tests/Makefile install_ubuntu
 
 .phony: all clean

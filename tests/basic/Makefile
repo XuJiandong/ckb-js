@@ -22,20 +22,20 @@ qjs-tests:
 	$(call run,test_bignum.js)
 
 log:
-	$(CKB-DEBUGGER) --bin $(ROOT_DIR)/../../build/ckb-js-vm "console.log(scriptArgs[0], scriptArgs[1]);" hello world
+	$(CKB-DEBUGGER) --bin $(ROOT_DIR)/../../build/ckb-js-vm -- -e "console.log(scriptArgs[0], scriptArgs[1]);" hello world
 
 
 assert:
-	$(CKB-DEBUGGER) --bin $(ROOT_DIR)/../../build/ckb-js-vm "console.assert(true);"
-	$(CKB-DEBUGGER) --bin $(ROOT_DIR)/../../build/ckb-js-vm "console.assert(true); console.assert(false); " || echo "should fail"
+	$(CKB-DEBUGGER) --bin $(ROOT_DIR)/../../build/ckb-js-vm -- -e "console.assert(true);"
+	$(CKB-DEBUGGER) --bin $(ROOT_DIR)/../../build/ckb-js-vm -- -e "console.assert(true); console.assert(false); " || echo "should fail"
 
 syntax-error:
-	$(CKB-DEBUGGER) --bin $(ROOT_DIR)/../../build/ckb-js-vm "ASDF" | grep "ReferenceError: 'ASDF' is not defined"
+	$(CKB-DEBUGGER) --bin $(ROOT_DIR)/../../build/ckb-js-vm -- -e "ASDF" | grep "ReferenceError: 'ASDF' is not defined"
 
 syscalls:
-	$(CKB-DEBUGGER) --bin $(ROOT_DIR)/../../build/ckb-js-vm "console.log(ckb);"
-	$(CKB-DEBUGGER) --bin $(ROOT_DIR)/../../build/ckb-js-vm "ckb.exit(0);"
-	$(CKB-DEBUGGER) --bin $(ROOT_DIR)/../../build/ckb-js-vm 'ckb.debug("hello, ckb");'
-	$(CKB-DEBUGGER) --bin $(ROOT_DIR)/../../build/ckb-js-vm 'console.log(ckb.vm_version(), ckb.current_cycles())'
-	$(CKB-DEBUGGER) --bin $(ROOT_DIR)/../../build/ckb-js-vm 'console.log(ckb.SOURCE_INPUT, ckb.SOURCE_OUTPUT, ckb.CELL_FIELD_OCCUPIED_CAPACITY)'
-	$(CKB-DEBUGGER) --bin $(ROOT_DIR)/../../build/ckb-js-vm 'console.log(100.1, ckb.SOURCE_GROUP_INPUT, ckb.SOURCE_GROUP_OUTPUT)'
+	$(CKB-DEBUGGER) --bin $(ROOT_DIR)/../../build/ckb-js-vm -- -e "console.log(ckb);"
+	$(CKB-DEBUGGER) --bin $(ROOT_DIR)/../../build/ckb-js-vm -- -e "ckb.exit(0);"
+	$(CKB-DEBUGGER) --bin $(ROOT_DIR)/../../build/ckb-js-vm -- -e 'ckb.debug("hello, ckb");'
+	$(CKB-DEBUGGER) --bin $(ROOT_DIR)/../../build/ckb-js-vm -- -e 'console.log(ckb.vm_version(), ckb.current_cycles())'
+	$(CKB-DEBUGGER) --bin $(ROOT_DIR)/../../build/ckb-js-vm -- -e 'console.log(ckb.SOURCE_INPUT, ckb.SOURCE_OUTPUT, ckb.CELL_FIELD_OCCUPIED_CAPACITY)'
+	$(CKB-DEBUGGER) --bin $(ROOT_DIR)/../../build/ckb-js-vm -- -e 'console.log(100.1, ckb.SOURCE_GROUP_INPUT, ckb.SOURCE_GROUP_OUTPUT)'
