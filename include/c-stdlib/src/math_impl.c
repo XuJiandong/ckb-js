@@ -132,28 +132,26 @@ double tanh(double x) {
     return 0;
 }
 
-
 double rint(double x) {
-    static const double toint = 1/EPS;
-    union {double f; uint64_t i;} u = {x};
-    int e = u.i>>52 & 0x7ff;
-    int s = u.i>>63;
+    static const double toint = 1 / EPS;
+    union {
+        double f;
+        uint64_t i;
+    } u = {x};
+    int e = u.i >> 52 & 0x7ff;
+    int s = u.i >> 63;
     double y;
 
-    if (e >= 0x3ff+52)
-        return x;
+    if (e >= 0x3ff + 52) return x;
     if (s)
         y = x - toint + toint;
     else
         y = x + toint - toint;
-    if (y == 0)
-        return s ? -0.0 : 0;
+    if (y == 0) return s ? -0.0 : 0;
     return y;
 }
 
-long int lrint(double x) {
-    return rint(x);
-}
+long int lrint(double x) { return rint(x); }
 
 double cbrt(double x) {
     assert(0);

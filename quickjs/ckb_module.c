@@ -513,16 +513,12 @@ int js_init_module_ckb(JSContext *ctx) {
 #define BLAKE2B_BLOCK_SIZE 32
 
 int load_cell_code_info(size_t *buf_size, size_t *index) {
+    int err = 0;
     unsigned char script[SCRIPT_SIZE];
     uint64_t len = SCRIPT_SIZE;
-    int ret = ckb_load_script(script, &len, 0);
-    if (ret) {
-        printf("Error while loading script: %d", ret);
-        return -1;
-    }
-    if (len > SCRIPT_SIZE) {
-        return -1;
-    }
+    err = ckb_load_script(script, &len, 0);
+    CHECK(err);
+    CHECK2(len <= SCRIPT_SIZE, -1);
     mol_seg_t script_seg;
     script_seg.ptr = (uint8_t *)script;
     script_seg.size = len;
@@ -535,38 +531,27 @@ int load_cell_code_info(size_t *buf_size, size_t *index) {
     // <lua loader args, 2 bytes> <data, variable length>
     mol_seg_t args_seg = MolReader_Script_get_args(&script_seg);
     mol_seg_t args_bytes_seg = MolReader_Bytes_raw_bytes(&args_seg);
-    if (args_bytes_seg.size < JS_LOADER_ARGS_SIZE) {
-        return -1;
-    }
+    CHECK2(args_bytes_seg.size >= JS_LOADER_ARGS_SIZE, -1);
 
     // Loading lua code from dependent cell with code hash and hash type
     // The script arguments are in the following format
     // <lua loader args, 2 bytes> <code hash of lua code, 32 bytes>
     // <hash type of lua code, 1 byte>
-    if (args_bytes_seg.size < JS_LOADER_ARGS_SIZE + BLAKE2B_BLOCK_SIZE + 1) {
-        return -1;
-    }
+    CHECK2(args_bytes_seg.size >= JS_LOADER_ARGS_SIZE + BLAKE2B_BLOCK_SIZE + 1, -1);
+
     uint8_t *code_hash = args_bytes_seg.ptr + JS_LOADER_ARGS_SIZE;
     uint8_t hash_type = *(args_bytes_seg.ptr + JS_LOADER_ARGS_SIZE + BLAKE2B_BLOCK_SIZE);
 
     *index = 0;
-    ret = ckb_look_for_dep_with_hash2(code_hash, hash_type, index);
-    if (ret) {
-        printf("Error while looking for dep: %d\n", ret);
-        return -1;
-    }
+    err = ckb_look_for_dep_with_hash2(code_hash, hash_type, index);
+    CHECK(err);
 
     *buf_size = 0;
-    ret = ckb_load_cell_data(NULL, buf_size, 0, *index, CKB_SOURCE_CELL_DEP);
-    if (ret) {
-        printf("Error while loading cell data: %d\n", ret);
-        return -1;
-    }
-    if (*buf_size == 0) {
-        return -1;
-    }
-
-    return 0;
+    err = ckb_load_cell_data(NULL, buf_size, 0, *index, CKB_SOURCE_CELL_DEP);
+    CHECK(err);
+    CHECK2(*buf_size > 0, -1);
+exit:
+    return err;
 }
 
 int load_cell_code(size_t buf_size, size_t index, uint8_t *buf) {
