@@ -124,8 +124,13 @@ JSModuleDef *js_module_loader(JSContext *ctx, const char *module_name, void *opa
         return NULL;
     }
 
-    /* compile the module */
-    func_val = JS_Eval(ctx, (char *)buf, buf_len, module_name, JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY);
+    if (((const char *)buf)[0] == (char)0x02) {
+        func_val = JS_ReadObject(ctx, buf, buf_len, JS_READ_OBJ_BYTECODE);
+    } else {
+        /* compile the module */
+        func_val = JS_Eval(ctx, (char *)buf, buf_len, module_name, JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY);
+    }
+
     // js_free(ctx, buf);
     if (JS_IsException(func_val)) return NULL;
     /* XXX: could propagate the exception */
