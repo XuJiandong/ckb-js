@@ -4,11 +4,11 @@ ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 MAX-CYCLES ?= 2000000000
 
 define run
-	$(CKB-DEBUGGER) --max-cycles $(MAX-CYCLES) ---read-file $(ROOT_DIR)/$(1) --bin $(ROOT_DIR)/../../build/ckb-js-vm -- -r  2>&1 | fgrep 'Run result: 0'
+	$(CKB-DEBUGGER) --max-cycles $(MAX-CYCLES) --read-file $(ROOT_DIR)/$(1) --bin $(ROOT_DIR)/../../build/ckb-js-vm -- -r  2>&1 | fgrep 'Run result: 0'
 endef
 
 define debug
-	$(CKB-DEBUGGER) --max-cycles $(MAX-CYCLES) ---read-file $(ROOT_DIR)/$(1) --bin $(ROOT_DIR)/../../build/ckb-js-vm -- -r
+	$(CKB-DEBUGGER) --max-cycles $(MAX-CYCLES) --read-file $(ROOT_DIR)/$(1) --bin $(ROOT_DIR)/../../build/ckb-js-vm -- -r
 endef
 
 all: qjs-tests syntax-error log syscalls assert

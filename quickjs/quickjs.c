@@ -33878,18 +33878,6 @@ typedef enum BCTagEnum {
     BC_TAG_OBJECT_REFERENCE,
 } BCTagEnum;
 
-#ifdef CONFIG_BIGNUM
-#define BC_BASE_VERSION 2
-#else
-#define BC_BASE_VERSION 1
-#endif
-#define BC_BE_VERSION 0x40
-#ifdef WORDS_BIGENDIAN
-#define BC_VERSION (BC_BASE_VERSION | BC_BE_VERSION)
-#else
-#define BC_VERSION BC_BASE_VERSION
-#endif
-
 typedef struct BCWriterState {
     JSContext *ctx;
     DynBuf dbuf;

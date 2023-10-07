@@ -120,12 +120,31 @@ JSModuleDef *js_module_loader(JSContext *ctx, const char *module_name, void *opa
 
     buf = js_load_file(ctx, &buf_len, module_name);
     if (!buf) {
-        JS_ThrowReferenceError(ctx, "could not load module filename '%s'", module_name);
-        return NULL;
+        if (strlen(module_name) <= 3) {
+            JS_ThrowReferenceError(ctx, "could not load module filename '%s'", module_name);
+            return NULL;
+        }
+        if (strcmp(module_name + strlen(module_name) - 3, ".js") != 0) {
+            JS_ThrowReferenceError(ctx, "could not load module filename '%s'", module_name);
+            return NULL;
+        }
+        char secend_name[256];
+        strcpy(secend_name, module_name);
+        strcpy(secend_name + strlen(module_name) - 3, ".bc");
+        buf = js_load_file(ctx, &buf_len, secend_name);
+        if (!buf) {
+            JS_ThrowReferenceError(ctx, "could not load module filename '%s'", module_name);
+            return NULL;
+        }
     }
 
-    /* compile the module */
-    func_val = JS_Eval(ctx, (char *)buf, buf_len, module_name, JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY);
+    if (((const char *)buf)[0] == (char)BC_VERSION) {
+        func_val = JS_ReadObject(ctx, buf, buf_len, JS_READ_OBJ_BYTECODE);
+    } else {
+        /* compile the module */
+        func_val = JS_Eval(ctx, (char *)buf, buf_len, module_name, JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY);
+    }
+
     // js_free(ctx, buf);
     if (JS_IsException(func_val)) return NULL;
     /* XXX: could propagate the exception */
@@ -134,4 +153,12 @@ JSModuleDef *js_module_loader(JSContext *ctx, const char *module_name, void *opa
     m = JS_VALUE_GET_PTR(func_val);
     JS_FreeValue(ctx, func_val);
     return m;
+}
+
+static int js_module_dummy_init(JSContext *ctx, JSModuleDef *m) {
+    return 0;
+}
+
+JSModuleDef *js_module_dummy_loader(JSContext *ctx, const char *module_name, void *opaque) {
+    return JS_NewCModule(ctx, module_name, js_module_dummy_init);
 }
