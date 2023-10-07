@@ -6,6 +6,14 @@
 #include "molecule/blockchain.h"
 #include "molecule/molecule_reader.h"
 
+// For syscalls supporting partial loading, the arguments are described as:
+// argument 1: index
+// argument 2: source
+// argument 3: length (optional, default to full length)
+// argument 4: offset (optional, default to 0)
+//
+#define NO_VALUE ((size_t)-1)
+
 enum SyscallErrorCode {
     SyscallErrorUnknown = 80,
     SyscallErrorMemory = 81,
@@ -23,32 +31,83 @@ struct LoadData;
 typedef int (*LoadFunc)(void *addr, uint64_t *len, struct LoadData *data);
 
 typedef struct LoadData {
-    uint64_t input_len;
-    uint64_t output_len;
-    size_t offset;
+    uint64_t length;
     size_t index;
     size_t source;
+    size_t offset;
     size_t field;
     LoadFunc func;
 } LoadData;
+
+static JSValue parse_args(JSContext *ctx, LoadData *data, bool has_field, int argc, JSValueConst *argv, LoadFunc func) {
+    int64_t index;
+    int64_t source;
+    int64_t length = NO_VALUE;
+    int64_t offset = NO_VALUE;
+    int64_t field = NO_VALUE;
+
+    if (JS_ToInt64(ctx, &index, argv[0])) {
+        return JS_EXCEPTION;
+    }
+    if (JS_ToInt64(ctx, &source, argv[1])) {
+        return JS_EXCEPTION;
+    }
+    int var_arg_index = 2;
+    if (has_field) {
+        if (argc > 2) {
+            if (JS_ToInt64(ctx, &field, argv[2])) {
+                return JS_EXCEPTION;
+            }
+        }
+        var_arg_index = 3;
+    }
+    if (argc > var_arg_index) {
+        if (JS_ToInt64(ctx, &length, argv[var_arg_index])) {
+            return JS_EXCEPTION;
+        }
+    }
+    if (argc > (var_arg_index + 1)) {
+        if (JS_ToInt64(ctx, &offset, argv[var_arg_index + 1])) {
+            return JS_EXCEPTION;
+        }
+    }
+
+    data->func = func;
+    data->length = length;
+    data->offset = offset;
+    data->index = index;
+    data->source = source;
+    data->field = field;
+    return JS_TRUE;
+}
 
 static JSValue syscall_load(JSContext *ctx, LoadData *data) {
     int err = 0;
     JSValue ret = JS_EXCEPTION;
     uint8_t *addr = 0;
-    // When `input_len` is zero, get actual length first
-    if (data->input_len == 0) {
-        err = data->func(0, &data->input_len, data);
+    // no offset specified, default to 0
+    if (data->offset == NO_VALUE) {
+        data->offset = 0;
+    }
+    // get actual length
+    if (data->length == 0) {
+        err = data->func(0, &data->length, data);
+        CHECK(err);
+        return JS_NewUint32(ctx, (uint32_t)data->length);
+    }
+    // no length specified, read to the end
+    if (data->length == NO_VALUE) {
+        err = data->func(0, &data->length, data);
         CHECK(err);
     }
-    addr = (uint8_t *)malloc(data->input_len);
+
+    addr = (uint8_t *)malloc(data->length);
     CHECK2(addr != NULL, SyscallErrorMemory);
-    uint64_t len = data->input_len;
+    uint64_t len = data->length;
     err = data->func(addr, &len, data);
     CHECK(err);
-    CHECK2(len <= data->input_len, SyscallErrorUnknown);
-    data->output_len = len;
-    ret = JS_NewArrayBuffer(ctx, addr, len, my_free, addr, false);
+    CHECK2(len >= data->length, SyscallErrorUnknown);
+    ret = JS_NewArrayBuffer(ctx, addr, data->length, my_free, addr, false);
 exit:
     if (err != 0) {
         return JS_EXCEPTION;
@@ -62,15 +121,10 @@ static int _load_tx_hash(void *addr, uint64_t *len, LoadData *data) {
 }
 
 static JSValue syscall_load_tx_hash(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
-    int64_t offset;
-    if (JS_ToInt64(ctx, &offset, argv[0])) {
-        return JS_EXCEPTION;
-    }
     LoadData data = {
         .func = _load_tx_hash,
-        .input_len = 32,
-        .offset = offset,
-        .output_len = 0,
+        .length = 32,
+        .offset = 0,
     };
     return syscall_load(ctx, &data);
 }
@@ -80,16 +134,11 @@ static int _load_transaction(void *addr, uint64_t *len, LoadData *data) {
 }
 
 static JSValue syscall_load_transaction(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
-    int64_t offset;
-    if (JS_ToInt64(ctx, &offset, argv[0])) {
-        return JS_EXCEPTION;
+    LoadData data = {0};
+    JSValue ret = parse_args(ctx, &data, false, argc, argv, _load_transaction);
+    if (JS_IsException(ret)) {
+        return ret;
     }
-    LoadData data = {
-        .func = _load_transaction,
-        .input_len = (uint64_t)offset,
-        .offset = offset,
-        .output_len = 0,
-    };
     return syscall_load(ctx, &data);
 }
 
@@ -98,15 +147,10 @@ static int _load_script_hash(void *addr, uint64_t *len, LoadData *data) {
 }
 
 static JSValue syscall_load_script_hash(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
-    int64_t offset;
-    if (JS_ToInt64(ctx, &offset, argv[0])) {
-        return JS_EXCEPTION;
-    }
     LoadData data = {
         .func = _load_script_hash,
-        .input_len = 32,
-        .offset = offset,
-        .output_len = 0,
+        .length = 32,
+        .offset = 0,
     };
     return syscall_load(ctx, &data);
 }
@@ -114,16 +158,11 @@ static JSValue syscall_load_script_hash(JSContext *ctx, JSValueConst this_val, i
 static int _load_script(void *addr, uint64_t *len, LoadData *data) { return ckb_load_script(addr, len, data->offset); }
 
 static JSValue syscall_load_script(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
-    int64_t offset;
-    if (JS_ToInt64(ctx, &offset, argv[0])) {
-        return JS_EXCEPTION;
+    LoadData data = {0};
+    JSValue ret = parse_args(ctx, &data, false, argc, argv, _load_script);
+    if (JS_IsException(ret)) {
+        return ret;
     }
-    LoadData data = {
-        .func = _load_script,
-        .input_len = 0,
-        .offset = offset,
-        .output_len = 0,
-    };
     return syscall_load(ctx, &data);
 }
 
@@ -138,27 +177,11 @@ static int _load_cell(void *addr, uint64_t *len, LoadData *data) {
 }
 
 static JSValue syscall_load_cell(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
-    int64_t offset;
-    if (JS_ToInt64(ctx, &offset, argv[0])) {
-        return JS_EXCEPTION;
+    LoadData data = {0};
+    JSValue ret = parse_args(ctx, &data, false, argc, argv, _load_cell);
+    if (JS_IsException(ret)) {
+        return ret;
     }
-    int64_t index;
-    if (JS_ToInt64(ctx, &index, argv[1])) {
-        return JS_EXCEPTION;
-    }
-    int64_t source;
-    if (JS_ToInt64(ctx, &source, argv[2])) {
-        return JS_EXCEPTION;
-    }
-
-    LoadData data = {
-        .func = _load_cell,
-        .input_len = 0,
-        .offset = offset,
-        .index = index,
-        .source = source,
-        .output_len = 0,
-    };
     return syscall_load(ctx, &data);
 }
 
@@ -167,27 +190,11 @@ static int _load_input(void *addr, uint64_t *len, LoadData *data) {
 }
 
 static JSValue syscall_load_input(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
-    int64_t offset;
-    if (JS_ToInt64(ctx, &offset, argv[0])) {
-        return JS_EXCEPTION;
+    LoadData data = {0};
+    JSValue ret = parse_args(ctx, &data, false, argc, argv, _load_input);
+    if (JS_IsException(ret)) {
+        return ret;
     }
-    int64_t index;
-    if (JS_ToInt64(ctx, &index, argv[1])) {
-        return JS_EXCEPTION;
-    }
-    int64_t source;
-    if (JS_ToInt64(ctx, &source, argv[2])) {
-        return JS_EXCEPTION;
-    }
-
-    LoadData data = {
-        .func = _load_input,
-        .input_len = 0,
-        .offset = offset,
-        .index = index,
-        .source = source,
-        .output_len = 0,
-    };
     return syscall_load(ctx, &data);
 }
 
@@ -196,27 +203,11 @@ static int _load_header(void *addr, uint64_t *len, LoadData *data) {
 }
 
 static JSValue syscall_load_header(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
-    int64_t offset;
-    if (JS_ToInt64(ctx, &offset, argv[0])) {
-        return JS_EXCEPTION;
+    LoadData data = {0};
+    JSValue ret = parse_args(ctx, &data, false, argc, argv, _load_header);
+    if (JS_IsException(ret)) {
+        return ret;
     }
-    int64_t index;
-    if (JS_ToInt64(ctx, &index, argv[1])) {
-        return JS_EXCEPTION;
-    }
-    int64_t source;
-    if (JS_ToInt64(ctx, &source, argv[2])) {
-        return JS_EXCEPTION;
-    }
-
-    LoadData data = {
-        .func = _load_header,
-        .input_len = 0,
-        .offset = offset,
-        .index = index,
-        .source = source,
-        .output_len = 0,
-    };
     return syscall_load(ctx, &data);
 }
 
@@ -225,27 +216,11 @@ static int _load_witness(void *addr, uint64_t *len, LoadData *data) {
 }
 
 static JSValue syscall_load_witness(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
-    int64_t offset;
-    if (JS_ToInt64(ctx, &offset, argv[0])) {
-        return JS_EXCEPTION;
+    LoadData data = {0};
+    JSValue ret = parse_args(ctx, &data, false, argc, argv, _load_witness);
+    if (JS_IsException(ret)) {
+        return ret;
     }
-    int64_t index;
-    if (JS_ToInt64(ctx, &index, argv[1])) {
-        return JS_EXCEPTION;
-    }
-    int64_t source;
-    if (JS_ToInt64(ctx, &source, argv[2])) {
-        return JS_EXCEPTION;
-    }
-
-    LoadData data = {
-        .func = _load_witness,
-        .input_len = 0,
-        .offset = offset,
-        .index = index,
-        .source = source,
-        .output_len = 0,
-    };
     return syscall_load(ctx, &data);
 }
 
@@ -254,27 +229,11 @@ static int _load_cell_data(void *addr, uint64_t *len, LoadData *data) {
 }
 
 static JSValue syscall_load_cell_data(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
-    int64_t offset;
-    if (JS_ToInt64(ctx, &offset, argv[0])) {
-        return JS_EXCEPTION;
+    LoadData data = {0};
+    JSValue ret = parse_args(ctx, &data, false, argc, argv, _load_cell_data);
+    if (JS_IsException(ret)) {
+        return ret;
     }
-    int64_t index;
-    if (JS_ToInt64(ctx, &index, argv[1])) {
-        return JS_EXCEPTION;
-    }
-    int64_t source;
-    if (JS_ToInt64(ctx, &source, argv[2])) {
-        return JS_EXCEPTION;
-    }
-
-    LoadData data = {
-        .func = _load_cell_data,
-        .input_len = 0,
-        .offset = offset,
-        .index = index,
-        .source = source,
-        .output_len = 0,
-    };
     return syscall_load(ctx, &data);
 }
 
@@ -283,32 +242,11 @@ static int _load_cell_by_field(void *addr, uint64_t *len, LoadData *data) {
 }
 
 static JSValue syscall_load_cell_by_field(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
-    int64_t offset;
-    if (JS_ToInt64(ctx, &offset, argv[0])) {
-        return JS_EXCEPTION;
+    LoadData data = {0};
+    JSValue ret = parse_args(ctx, &data, true, argc, argv, _load_cell_by_field);
+    if (JS_IsException(ret)) {
+        return ret;
     }
-    int64_t index;
-    if (JS_ToInt64(ctx, &index, argv[1])) {
-        return JS_EXCEPTION;
-    }
-    int64_t source;
-    if (JS_ToInt64(ctx, &source, argv[2])) {
-        return JS_EXCEPTION;
-    }
-    int64_t field;
-    if (JS_ToInt64(ctx, &field, argv[3])) {
-        return JS_EXCEPTION;
-    }
-
-    LoadData data = {
-        .func = _load_cell_data,
-        .input_len = 0,
-        .offset = offset,
-        .index = index,
-        .source = source,
-        .field = field,
-        .output_len = 0,
-    };
     return syscall_load(ctx, &data);
 }
 
@@ -317,32 +255,11 @@ static int _load_header_by_field(void *addr, uint64_t *len, LoadData *data) {
 }
 
 static JSValue syscall_load_header_by_field(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
-    int64_t offset;
-    if (JS_ToInt64(ctx, &offset, argv[0])) {
-        return JS_EXCEPTION;
+    LoadData data = {0};
+    JSValue ret = parse_args(ctx, &data, true, argc, argv, _load_header_by_field);
+    if (JS_IsException(ret)) {
+        return ret;
     }
-    int64_t index;
-    if (JS_ToInt64(ctx, &index, argv[1])) {
-        return JS_EXCEPTION;
-    }
-    int64_t source;
-    if (JS_ToInt64(ctx, &source, argv[2])) {
-        return JS_EXCEPTION;
-    }
-    int64_t field;
-    if (JS_ToInt64(ctx, &field, argv[3])) {
-        return JS_EXCEPTION;
-    }
-
-    LoadData data = {
-        .func = _load_header_by_field,
-        .input_len = 0,
-        .offset = offset,
-        .index = index,
-        .source = source,
-        .field = field,
-        .output_len = 0,
-    };
     return syscall_load(ctx, &data);
 }
 
@@ -351,32 +268,11 @@ static int _load_input_by_field(void *addr, uint64_t *len, LoadData *data) {
 }
 
 static JSValue syscall_load_input_by_field(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
-    int64_t offset;
-    if (JS_ToInt64(ctx, &offset, argv[0])) {
-        return JS_EXCEPTION;
+    LoadData data = {0};
+    JSValue ret = parse_args(ctx, &data, true, argc, argv, _load_input_by_field);
+    if (JS_IsException(ret)) {
+        return ret;
     }
-    int64_t index;
-    if (JS_ToInt64(ctx, &index, argv[1])) {
-        return JS_EXCEPTION;
-    }
-    int64_t source;
-    if (JS_ToInt64(ctx, &source, argv[2])) {
-        return JS_EXCEPTION;
-    }
-    int64_t field;
-    if (JS_ToInt64(ctx, &field, argv[3])) {
-        return JS_EXCEPTION;
-    }
-
-    LoadData data = {
-        .func = _load_input_by_field,
-        .input_len = 0,
-        .offset = offset,
-        .index = index,
-        .source = source,
-        .field = field,
-        .output_len = 0,
-    };
     return syscall_load(ctx, &data);
 }
 

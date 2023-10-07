@@ -87,6 +87,6 @@ install:
 	wget 'https://github.com/nervosnetwork/ckb-standalone-debugger/releases/download/v0.111.0/ckb-debugger-linux-x64.tar.gz'
 	tar zxvf ckb-debugger-linux-x64.tar.gz
 	mv ckb-debugger ~/.cargo/bin/ckb-debugger
-	make -f tests/ckb_js_tests/Makefile install_ubuntu
+	make -f tests/ckb_js_tests/Makefile install-lua
 
 .phony: all clean
