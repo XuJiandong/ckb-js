@@ -48,7 +48,6 @@ typedef enum {
     RunJsWithDbgFileSystem,
 
     CompileWithFile,
-    CompileWithFileSystem,
 } RunJSType;
 
 static RunJSType parse_args(int argc, const char **argv) {
@@ -70,12 +69,7 @@ static RunJSType parse_args(int argc, const char **argv) {
     }
 
     if (has_c) {
-        if (has_f) {
-            if (argc < 3 || argv[2] == NULL) return RunJsError;
-            return CompileWithFileSystem;
-        } else {
-            return CompileWithFile;
-        }
+        return CompileWithFile;
     } else if (has_e) {
         if (argc < 2 || argv[1] == NULL) return RunJsError;
         if (has_r || has_f)
@@ -160,49 +154,6 @@ int compile_from_file(JSContext *ctx) {
         printf("%s", msg_buf);
     }
     return 0;
-}
-
-int compile_from_file_system(JSContext *ctx, const char* filename) {
-    enable_local_access(1);
-    char buf[1024 * 512];
-    int buf_len = read_local_file(buf, sizeof(buf));
-    if (buf_len < 0 || buf_len == sizeof(buf)) {
-        if (buf_len == sizeof(buf)) {
-            printf("Error while reading from file: file too large\n");
-        } else {
-            printf("Error while reading from file: %d\n", buf_len);
-        }
-        return -1;
-    }
-
-    int err = ckb_load_fs(buf, buf_len);
-    CHECK(err);
-
-    FSFile *main_file = NULL;
-    err = ckb_get_file(filename, &main_file);
-    CHECK(err);
-    CHECK2(main_file->size > 0, -1);
-
-    JSValue val;
-    val = JS_Eval(ctx, main_file->content, main_file->size, filename, JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY);
-    if (JS_IsException(val)) {
-        js_std_dump_error(ctx);
-        return -1;
-    }
-    uint8_t *out_buf;
-    size_t out_buf_len;
-    out_buf = JS_WriteObject(ctx, &out_buf_len, val, JS_WRITE_OBJ_BYTECODE);
-    if (!out_buf) return -1;
-    char msg_buf[65];
-    for (int i = 0; i < out_buf_len; i += 32) {
-        uint32_t size = i + 32 > out_buf_len ? out_buf_len - i : 32;
-        _exec_bin2hex(&out_buf[i], size, msg_buf, 65, &size, true);
-        msg_buf[size - 1] = 0;
-        printf("%s", msg_buf);
-    }
-    return 0;
-exit:
-    return err;
 }
 
 static int eval_buf(JSContext *ctx, const void *buf, int buf_len, const char *filename, int eval_flags) {
@@ -367,10 +318,8 @@ int main(int argc, const char **argv) {
             err = run_from_local_file(ctx, true);
             break;
         case CompileWithFile:
+            JS_SetModuleLoaderFunc(rt, NULL, js_module_dummy_loader, NULL);
             err = compile_from_file(ctx);
-            break;
-        case CompileWithFileSystem:
-            err = compile_from_file_system(ctx, argv[2]);
             break;
         default:
             printf("unknow type: %d", type);
