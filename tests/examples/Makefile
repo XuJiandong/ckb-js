@@ -14,7 +14,7 @@ define debug
 endef
 
 define compile-run
-	$(CKB-DEBUGGER) --read-file $(ROOT_DIR)/$(1) --bin $(ROOT_DIR)/../../build/ckb-js-vm -- -c | head -n -3 | xxd -r -p > $(ROOT_DIR)/../../build/$(1).bc
+	$(CKB-DEBUGGER) --read-file $(ROOT_DIR)/$(1) --bin $(ROOT_DIR)/../../build/ckb-js-vm -- -c | awk '/Run result: 0/{exit} {print}' | xxd -r -p > $(ROOT_DIR)/../../build/$(1).bc
 	$(CKB-DEBUGGER) --read-file $(ROOT_DIR)/../../build/$(1).bc --bin $(ROOT_DIR)/../../build/ckb-js-vm -- -r | fgrep 'Run result: 0'
 endef
 
