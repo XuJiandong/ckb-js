@@ -106,8 +106,8 @@ static JSValue syscall_load(JSContext *ctx, LoadData *data) {
     uint64_t len = data->length;
     err = data->func(addr, &len, data);
     CHECK(err);
-    CHECK2(len >= data->length, SyscallErrorUnknown);
-    ret = JS_NewArrayBuffer(ctx, addr, data->length, my_free, addr, false);
+    int real_len = len < data->length ? len : data->length;
+    ret = JS_NewArrayBuffer(ctx, addr, real_len, my_free, addr, false);
 exit:
     if (err != 0) {
         return JS_EXCEPTION;

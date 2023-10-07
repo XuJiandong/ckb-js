@@ -26,6 +26,8 @@ function test_partial_loading(load_func) {
     console.log('test_partial_loading ...');
     let data = load_func(0, ckb.SOURCE_OUTPUT);
     expect_array(data, ARRAY8);
+    data = load_func(0, ckb.SOURCE_OUTPUT, 100);
+    expect_array(data, ARRAY8);
     let length = load_func(0, ckb.SOURCE_OUTPUT, 0);
     console.assert(length === 8, 'length != 8');
     length = load_func(0, ckb.SOURCE_OUTPUT, 0, 1);
