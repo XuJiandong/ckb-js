@@ -120,8 +120,22 @@ JSModuleDef *js_module_loader(JSContext *ctx, const char *module_name, void *opa
 
     buf = js_load_file(ctx, &buf_len, module_name);
     if (!buf) {
-        JS_ThrowReferenceError(ctx, "could not load module filename '%s'", module_name);
-        return NULL;
+        if (strlen(module_name) <= 3) {
+            JS_ThrowReferenceError(ctx, "could not load module filename '%s'", module_name);
+            return NULL;
+        }
+        if (strcmp(module_name + strlen(module_name) - 3, ".js") != 0) {
+            JS_ThrowReferenceError(ctx, "could not load module filename '%s'", module_name);
+            return NULL;
+        }
+        char secend_name[256];
+        strcpy(secend_name, module_name);
+        strcpy(secend_name + strlen(module_name) - 3, ".bc");
+        buf = js_load_file(ctx, &buf_len, secend_name);
+        if (!buf) {
+            JS_ThrowReferenceError(ctx, "could not load module filename '%s'", module_name);
+            return NULL;
+        }
     }
 
     if (((const char *)buf)[0] == (char)BC_VERSION) {

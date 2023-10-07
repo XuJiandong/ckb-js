@@ -36,6 +36,7 @@
 #include "ckb_exec.h"
 
 #define MAIN_FILE_NAME "main.js"
+#define MAIN_FILE_NAME_BC "main.bc"
 
 typedef enum {
     RunJsError = 0,
@@ -251,6 +252,9 @@ int run_from_file_system_buf(JSContext *ctx, char *buf, size_t buf_size) {
 
     FSFile *main_file = NULL;
     err = ckb_get_file(MAIN_FILE_NAME, &main_file);
+    if (err != 0) {
+        err = ckb_get_file(MAIN_FILE_NAME_BC, &main_file);
+    }
     CHECK(err);
     CHECK2(main_file->size > 0, -1);
     err = eval_buf(ctx, main_file->content, main_file->size, MAIN_FILE_NAME, JS_EVAL_TYPE_MODULE);
