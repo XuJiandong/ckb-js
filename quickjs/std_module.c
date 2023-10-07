@@ -124,7 +124,7 @@ JSModuleDef *js_module_loader(JSContext *ctx, const char *module_name, void *opa
         return NULL;
     }
 
-    if (((const char *)buf)[0] == (char)0x02) {
+    if (((const char *)buf)[0] == (char)BC_VERSION) {
         func_val = JS_ReadObject(ctx, buf, buf_len, JS_READ_OBJ_BYTECODE);
     } else {
         /* compile the module */

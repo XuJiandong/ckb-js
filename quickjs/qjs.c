@@ -208,7 +208,7 @@ static int eval_buf(JSContext *ctx, const void *buf, int buf_len, const char *fi
     JSValue val;
     int ret;
 
-    if (((const char *)buf)[0] == (char)0x02) {
+    if (((const char *)buf)[0] == (char)BC_VERSION) {
         val = JS_ReadObject(ctx, buf, buf_len, JS_READ_OBJ_BYTECODE);
         if (JS_IsException(val)) {
             js_std_dump_error(ctx);
