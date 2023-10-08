@@ -1,7 +1,7 @@
 CKB_DEBUGGER ?= ckb-debugger
 MAX_CYCLES ?= 2000000000
 ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
-CKB_JS_VM_BIN_PATH = $(ROOT_DIR)/../../build/ckb-js-vm
+BIN_PATH = $(ROOT_DIR)/../../build/ckb-js-vm
 
 all: \
 	cargo_test \
@@ -17,10 +17,10 @@ build/testdata_fs_modules.bin: test_data/fs_module/main.js test_data/fs_module/f
 
 fs_bytecode:
 	mkdir -p ../../build/bytecode
-	$(CKB_DEBUGGER) --read-file test_data/fs_module/main.js --bin $(CKB_JS_VM_BIN_PATH) -- -c | awk '/Run result: 0/{exit} {print}' | xxd -r -p > ../../build/bytecode/main.bc
-	$(CKB_DEBUGGER) --read-file test_data/fs_module/fib_module.js --bin $(CKB_JS_VM_BIN_PATH) -- -c | awk '/Run result: 0/{exit} {print}' | xxd -r -p > ../../build/bytecode/fib_module.bc
+	$(CKB_DEBUGGER) --read-file test_data/fs_module/main.js --bin $(BIN_PATH) -- -c | awk '/Run result: 0/{exit} {print}' | xxd -r -p > ../../build/bytecode/main.bc
+	$(CKB_DEBUGGER) --read-file test_data/fs_module/fib_module.js --bin $(BIN_PATH) -- -c | awk '/Run result: 0/{exit} {print}' | xxd -r -p > ../../build/bytecode/fib_module.bc
 	cd ../../build/bytecode && lua ../../tools/fs.lua pack ../../build/testdata_fs_modules_bc.bin main.bc fib_module.bc
-	$(CKB_DEBUGGER) --max-cycles $(MAX_CYCLES) --read-file ../../build/testdata_fs_modules_bc.bin --bin $(CKB_JS_VM_BIN_PATH) -- -f -r 2>&1 | fgrep 'Run result: 0'
+	$(CKB_DEBUGGER) --max-cycles $(MAX_CYCLES) --read-file ../../build/testdata_fs_modules_bc.bin --bin $(BIN_PATH) -- -f -r 2>&1 | fgrep 'Run result: 0'
 
 file_system: build/testdata_fs_modules.bin
 	cargo run --bin default_by_cell | $(CKB_DEBUGGER) -s lock --tx-file=- --read-file ../../$^ -- -f -r  2>&1 | fgrep 'Run result: 0'
