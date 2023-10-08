@@ -298,8 +298,9 @@ static JSValue syscall_exec_cell(JSContext *ctx, JSValueConst this_value, int ar
     uint8_t code_hash[32];
 
     JSValue buffer = JS_GetTypedArrayBuffer(ctx, argv[0], NULL, NULL, NULL);
+    CHECK2(!JS_IsException(buffer), SyscallErrorArgument);
     uint8_t *p = JS_GetArrayBuffer(ctx, &code_hash_len, buffer);
-    CHECK2(code_hash_len == 32, -1);
+    CHECK2(code_hash_len == 32 && p != NULL, -1);
     memcpy(code_hash, p, 32);
 
     err = JS_ToUint32(ctx, &hash_type, argv[1]);
@@ -389,8 +390,9 @@ static JSValue syscall_spawn_cell(JSContext *ctx, JSValueConst this_value, int a
     uint8_t code_hash[32];
 
     JSValue buffer = JS_GetTypedArrayBuffer(ctx, argv[0], NULL, NULL, NULL);
+    CHECK2(!JS_IsException(buffer), SyscallErrorArgument);
     uint8_t *p = JS_GetArrayBuffer(ctx, &code_hash_len, buffer);
-    CHECK2(code_hash_len == 32, -1);
+    CHECK2(code_hash_len == 32 && p != NULL, -1);
     memcpy(code_hash, p, 32);
 
     err = JS_ToUint32(ctx, &hash_type, argv[1]);
@@ -434,7 +436,9 @@ static JSValue syscall_set_content(JSContext *ctx, JSValueConst this_value, int 
     int err = 0;
     size_t content_length = 0;
     JSValue buffer = JS_GetTypedArrayBuffer(ctx, argv[0], NULL, NULL, NULL);
+    CHECK2(!JS_IsException(buffer), SyscallErrorArgument);
     uint8_t *content = JS_GetArrayBuffer(ctx, &content_length, buffer);
+    CHECK2(content != NULL, SyscallErrorUnknown);
     uint64_t content_length2 = (uint64_t)content_length;
     err = ckb_set_content(content, &content_length2);
     CHECK(err);
