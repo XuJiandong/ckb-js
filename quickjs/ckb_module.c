@@ -17,6 +17,7 @@
 enum SyscallErrorCode {
     SyscallErrorUnknown = 80,
     SyscallErrorMemory = 81,
+    SyscallErrorArgument = 82,
 };
 
 static JSValue syscall_exit(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
@@ -294,9 +295,11 @@ static JSValue syscall_exec_cell(JSContext *ctx, JSValueConst this_value, int ar
     uint32_t offset = 0;
     uint32_t length = 0;
     const char *passed_argv[256] = {0};
+    uint8_t code_hash[32];
 
-    uint8_t *code_hash = JS_GetArrayBuffer(ctx, &code_hash_len, argv[0]);
+    uint8_t *p = JS_GetArrayBuffer(ctx, &code_hash_len, argv[0]);
     CHECK2(code_hash_len == 32, -1);
+    memcpy(code_hash, p, 32);
 
     err = JS_ToUint32(ctx, &hash_type, argv[1]);
     CHECK(err);
@@ -325,6 +328,126 @@ int read_local_file(char *buf, int size) {
     return ret;
 }
 
+static int get_property(JSContext *ctx, JSValueConst *obj, const char *prop, int64_t *value) {
+    int err = 0;
+    JSValue val = JS_GetPropertyStr(ctx, *obj, prop);
+    CHECK2(!JS_IsException(val), SyscallErrorArgument);
+    if (!JS_IsUndefined(val)) {
+        err = JS_ToInt64(ctx, value, val);
+        CHECK(err);
+    }
+    JS_FreeValue(ctx, val);
+exit:
+    return err;
+}
+/*
+ckb.spawn_cell
+argument 1: code_hash, ArrayBuffer
+argument 2: hash_type, int
+argument 3: spawn_args, including:
+    content_length, optional, int
+    memory_limit, optional, int
+    offset, optional, int
+    length, optional, int
+    argument 4~n: arguments
+return: object with
+    exit_code, int
+    content, ArrayBuffer
+Example usage:
+```javascript
+let code_hash = new ArrayBuffer(32);
+code_hash[0] = 0x01;
+...
+...
+let hash_type = ckb.SCRIPT_HASH_TYPE_TYPE;
+let spawn_args = {
+    content_length: 1024,
+    memory_limit: 8,
+    offset: 0,
+    length: 0,
+};
+let arg1 = "hello";
+let arg2 = "world";
+let ret = ckb.spawn_cell(code_hash, hash_type, spawn_args, arg1, arg2, arg3);
+let exit_code = ret.exit_code;
+let content = ret.content;
+```
+*/
+static JSValue syscall_spawn_cell(JSContext *ctx, JSValueConst this_value, int argc, JSValueConst *argv) {
+    int err = 0;
+    JSValue ret = JS_UNDEFINED;
+    const size_t argv_offset = 3;
+    size_t code_hash_len = 0;
+    uint32_t hash_type = 0;
+    int64_t content_length = 0;
+    int64_t memory_limit = 8;  // default value
+    int64_t offset = 0;
+    int64_t length = 0;
+    const char *passed_argv[256] = {0};
+    int8_t exit_code = 0;
+    uint8_t code_hash[32];
+
+    uint8_t *p = JS_GetArrayBuffer(ctx, &code_hash_len, argv[0]);
+    CHECK2(code_hash_len == 32, -1);
+    memcpy(code_hash, p, 32);
+
+    err = JS_ToUint32(ctx, &hash_type, argv[1]);
+    CHECK(err);
+    err = get_property(ctx, &argv[2], "content_length", &content_length);
+    CHECK(err);
+    err = get_property(ctx, &argv[2], "memory_limit", &memory_limit);
+    CHECK(err);
+    err = get_property(ctx, &argv[2], "offset", &offset);
+    CHECK(err);
+    err = get_property(ctx, &argv[2], "length", &length);
+    CHECK(err);
+
+    for (int i = argv_offset; i < argc; i++) {
+        passed_argv[i - argv_offset] = JS_ToCString(ctx, argv[i]);
+    }
+    void *content = malloc(content_length);
+    CHECK2(content != NULL, SyscallErrorArgument);
+    spawn_args_t spgs = {
+        .memory_limit = memory_limit,
+        .exit_code = &exit_code,
+        .content = content,
+        .content_length = (uint64_t *)&content_length,
+    };
+    err = ckb_spawn_cell(code_hash, (uint8_t)hash_type, offset, length, argc - argv_offset, passed_argv, &spgs);
+    CHECK(err);
+    ret = JS_NewObject(ctx);
+    CHECK2(!JS_IsException(ret), SyscallErrorMemory);
+    JS_DefinePropertyValueStr(ctx, ret, "exit_code", JS_NewUint32(ctx, (uint32_t)exit_code), JS_PROP_C_W_E);
+    JSValue content2 = JS_NewArrayBuffer(ctx, spgs.content, *spgs.content_length, my_free, spgs.content, false);
+    JS_DefinePropertyValueStr(ctx, ret, "content", content2, JS_PROP_C_W_E);
+exit:
+    if (err != 0) {
+        return JS_EXCEPTION;
+    } else {
+        return ret;
+    }
+}
+
+static JSValue syscall_set_content(JSContext *ctx, JSValueConst this_value, int argc, JSValueConst *argv) {
+    int err = 0;
+    size_t content_length = 0;
+    uint8_t *content = JS_GetArrayBuffer(ctx, &content_length, argv[0]);
+    uint64_t content_length2 = (uint64_t)content_length;
+    err = ckb_set_content(content, &content_length2);
+    CHECK(err);
+exit:
+    if (err != 0) {
+        return JS_EXCEPTION;
+    } else {
+        return JS_UNDEFINED;
+    }
+}
+
+static JSValue syscall_get_memory_limit(JSContext *ctx, JSValueConst this_value, int argc, JSValueConst *argv) {
+    int memory_limit = ckb_get_memory_limit();
+    return JS_NewUint32(ctx, (uint32_t)memory_limit);
+}
+
 /*
 TODO:
 // who allocated the memory indicated by aligned_addr?
@@ -332,21 +455,6 @@ int ckb_dlopen2(const uint8_t* dep_cell_hash, uint8_t hash_type,
                 uint8_t* aligned_addr, size_t aligned_size, void** handle,
                 size_t* consumed_size);
 void* ckb_dlsym(void* handle, const char* symbol);
-
-// arguments passed to spawn are too much? can we organize them into a object?
-typedef struct spawn_args_t {
-  uint64_t memory_limit;
-  int8_t* exit_code;
-  uint8_t* content;
-  uint64_t* content_length;
-} spawn_args_t;
-int ckb_spawn(size_t index, size_t source, size_t bounds, int argc,
-              const char* argv[], spawn_args_t* spgs);
-int ckb_spawn_cell(const uint8_t* code_hash, uint8_t hash_type, uint32_t offset,
-                   uint32_t length, int argc, const char* argv[],
-                   spawn_args_t* spgs);
-int ckb_get_memory_limit();
-int ckb_set_content(uint8_t* content, uint64_t* length);
 */
 int js_init_module_ckb(JSContext *ctx) {
     JSValue global_obj, ckb;
@@ -375,6 +483,10 @@ int js_init_module_ckb(JSContext *ctx) {
     JS_SetPropertyStr(ctx, ckb, "vm_version", JS_NewCFunction(ctx, syscall_vm_version, "vm_version", 0));
     JS_SetPropertyStr(ctx, ckb, "current_cycles", JS_NewCFunction(ctx, syscall_current_cycles, "current_cycles", 0));
     JS_SetPropertyStr(ctx, ckb, "exec_cell", JS_NewCFunction(ctx, syscall_exec_cell, "exec_cell", 4));
+    JS_SetPropertyStr(ctx, ckb, "spawn_cell", JS_NewCFunction(ctx, syscall_spawn_cell, "spawn_cell", 3));
+    JS_SetPropertyStr(ctx, ckb, "set_content", JS_NewCFunction(ctx, syscall_set_content, "set_content", 1));
+    JS_SetPropertyStr(ctx, ckb, "get_memory_limit",
+                      JS_NewCFunction(ctx, syscall_get_memory_limit, "get_memory_limit", 0));
 
     JS_SetPropertyStr(ctx, ckb, "SOURCE_INPUT", JS_NewInt64(ctx, CKB_SOURCE_INPUT));
     JS_SetPropertyStr(ctx, ckb, "SOURCE_OUTPUT", JS_NewInt64(ctx, CKB_SOURCE_OUTPUT));
@@ -398,6 +510,12 @@ int js_init_module_ckb(JSContext *ctx) {
     JS_SetPropertyStr(ctx, ckb, "HEADER_FIELD_EPOCH_LENGTH", JS_NewInt64(ctx, CKB_HEADER_FIELD_EPOCH_LENGTH));
     JS_SetPropertyStr(ctx, ckb, "INPUT_FIELD_OUT_POINT", JS_NewInt64(ctx, CKB_INPUT_FIELD_OUT_POINT));
     JS_SetPropertyStr(ctx, ckb, "INPUT_FIELD_SINCE", JS_NewInt64(ctx, CKB_INPUT_FIELD_SINCE));
+
+    // https://github.com/nervosnetwork/ckb/blob/45104e08c18852260282f23858ce21afae4c9f34/util/gen-types/src/core.rs#L14
+    JS_SetPropertyStr(ctx, ckb, "SCRIPT_HASH_TYPE_DATA", JS_NewInt64(ctx, 0));
+    JS_SetPropertyStr(ctx, ckb, "SCRIPT_HASH_TYPE_TYPE", JS_NewInt64(ctx, 1));
+    JS_SetPropertyStr(ctx, ckb, "SCRIPT_HASH_TYPE_DATA1", JS_NewInt64(ctx, 2));
+    JS_SetPropertyStr(ctx, ckb, "SCRIPT_HASH_TYPE_DATA2", JS_NewInt64(ctx, 4));
 
     JS_SetPropertyStr(ctx, global_obj, "ckb", ckb);
     JS_FreeValue(ctx, global_obj);

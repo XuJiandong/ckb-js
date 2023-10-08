@@ -155,9 +155,7 @@ JSModuleDef *js_module_loader(JSContext *ctx, const char *module_name, void *opa
     return m;
 }
 
-static int js_module_dummy_init(JSContext *ctx, JSModuleDef *m) {
-    return 0;
-}
+static int js_module_dummy_init(JSContext *ctx, JSModuleDef *m) { return 0; }
 
 JSModuleDef *js_module_dummy_loader(JSContext *ctx, const char *module_name, void *opaque) {
     return JS_NewCModule(ctx, module_name, js_module_dummy_init);
