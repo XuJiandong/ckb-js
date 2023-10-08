@@ -1,16 +1,6 @@
 
 
 const ARRAY8 = [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07];
-
-function into_array_buffer(input) {
-    let ret = new ArrayBuffer(input.length);
-    let view = new Uint8Array(ret);
-    for (let i = 0; i < input.length; i++) {
-        view[i] = input[i];
-    }
-    return ret;
-}
-
 function expect_array(a, b) {
     if (a.byteLength != b.length) {
         console.assert(false, `expect_array failed: length mismatched, ${a} VS ${b}`);
@@ -117,19 +107,11 @@ function test_misc() {
 function test_spawn() {
     console.log('test_spawn ...');
     const js_code = `
-    function into_array_buffer(input) {
-        let ret = new ArrayBuffer(input.length);
-        let view = new Uint8Array(ret);
-        for (let i = 0; i < input.length; i++) {
-            view[i] = input[i];
-        }
-        return ret;
-    }    
-    let c = into_array_buffer([0,1,2,3,4,5,6,7]);
+    let c = new Uint8Array([0,1,2,3,4,5,6,7]);
     ckb.set_content(c);
     ckb.exit(0);
     `;
-    let code_hash = into_array_buffer([
+    let code_hash = new Uint8Array([
         0xdf, 0x97, 0x77, 0x78, 0x08, 0x9b, 0xf3, 0x3f, 0xc5, 0x1f, 0x22, 0x45, 0xfa, 0x6d, 0xb7, 0xfa,
         0x18, 0x19, 0xd5, 0x03, 0x11, 0x31, 0xa8, 0x3d, 0x4e, 0xcb, 0xcb, 0x6c, 0xba, 0x07, 0xce, 0x91
     ]);

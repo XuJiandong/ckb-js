@@ -297,7 +297,8 @@ static JSValue syscall_exec_cell(JSContext *ctx, JSValueConst this_value, int ar
     const char *passed_argv[256] = {0};
     uint8_t code_hash[32];
 
-    uint8_t *p = JS_GetArrayBuffer(ctx, &code_hash_len, argv[0]);
+    JSValue buffer = JS_GetTypedArrayBuffer(ctx, argv[0], NULL, NULL, NULL);
+    uint8_t *p = JS_GetArrayBuffer(ctx, &code_hash_len, buffer);
     CHECK2(code_hash_len == 32, -1);
     memcpy(code_hash, p, 32);
 
@@ -387,7 +388,8 @@ static JSValue syscall_spawn_cell(JSContext *ctx, JSValueConst this_value, int a
     int8_t exit_code = 0;
     uint8_t code_hash[32];
 
-    uint8_t *p = JS_GetArrayBuffer(ctx, &code_hash_len, argv[0]);
+    JSValue buffer = JS_GetTypedArrayBuffer(ctx, argv[0], NULL, NULL, NULL);
+    uint8_t *p = JS_GetArrayBuffer(ctx, &code_hash_len, buffer);
     CHECK2(code_hash_len == 32, -1);
     memcpy(code_hash, p, 32);
 
@@ -431,7 +433,8 @@ exit:
 static JSValue syscall_set_content(JSContext *ctx, JSValueConst this_value, int argc, JSValueConst *argv) {
     int err = 0;
     size_t content_length = 0;
-    uint8_t *content = JS_GetArrayBuffer(ctx, &content_length, argv[0]);
+    JSValue buffer = JS_GetTypedArrayBuffer(ctx, argv[0], NULL, NULL, NULL);
+    uint8_t *content = JS_GetArrayBuffer(ctx, &content_length, buffer);
     uint64_t content_length2 = (uint64_t)content_length;
     err = ckb_set_content(content, &content_length2);
     CHECK(err);
