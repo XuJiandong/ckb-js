@@ -455,6 +455,11 @@ static JSValue syscall_get_memory_limit(JSContext *ctx, JSValueConst this_value,
     return JS_NewUint32(ctx, (uint32_t)memory_limit);
 }
 
+static JSValue syscall_current_memory(JSContext *ctx, JSValueConst this_value, int argc, JSValueConst *argv) {
+    int size = ckb_current_memory();
+    return JS_NewUint32(ctx, (uint32_t)size);
+}
+
 /*
 TODO:
 // who allocated the memory indicated by aligned_addr?
@@ -494,7 +499,8 @@ int js_init_module_ckb(JSContext *ctx) {
     JS_SetPropertyStr(ctx, ckb, "set_content", JS_NewCFunction(ctx, syscall_set_content, "set_content", 1));
     JS_SetPropertyStr(ctx, ckb, "get_memory_limit",
                       JS_NewCFunction(ctx, syscall_get_memory_limit, "get_memory_limit", 0));
-
+    JS_SetPropertyStr(ctx, ckb, "current_memory",
+                      JS_NewCFunction(ctx, syscall_current_memory, "current_memory", 0));
     JS_SetPropertyStr(ctx, ckb, "SOURCE_INPUT", JS_NewInt64(ctx, CKB_SOURCE_INPUT));
     JS_SetPropertyStr(ctx, ckb, "SOURCE_OUTPUT", JS_NewInt64(ctx, CKB_SOURCE_OUTPUT));
     JS_SetPropertyStr(ctx, ckb, "SOURCE_CELL_DEP", JS_NewInt64(ctx, CKB_SOURCE_CELL_DEP));
