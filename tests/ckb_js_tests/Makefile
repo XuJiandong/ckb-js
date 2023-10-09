@@ -12,6 +12,19 @@ all: \
 cargo_test:
 	cargo test
 
+default_by_cell:
+	cargo run --bin default_by_cell > tx.json
+	${CKB_DEBUGGER} --tx-file=tx.json -s lock
+
+exec_caller_from_cell_data:
+	clang-16 --target=riscv64 -march=rv64imc_zba_zbb_zbc_zbs \
+		-I ../../deps/ckb-c-stdlib/libc -I ../../deps/ckb-c-stdlib \
+		-nostdinc -nostdlib -o ../../build/exec_caller_from_cell_data test_data/exec_caller_from_cell_data.c
+
+module: exec_caller_from_cell_data
+	cargo run --bin module > tx.json
+	${CKB_DEBUGGER} --tx-file=tx.json -s lock
+
 build/testdata_fs_modules.bin: test_data/fs_module/main.js test_data/fs_module/fib_module.js
 	cd test_data/fs_module && lua ../../../../tools/fs.lua pack ../../../../$@ main.js fib_module.js
 
