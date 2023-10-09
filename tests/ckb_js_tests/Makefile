@@ -1,34 +1,34 @@
 CKB_DEBUGGER ?= ckb-debugger
 MAX_CYCLES ?= 2000000000
-
-CKB_JS_VM_BIN_PATH = ../../build/ckb-js-vm
+ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+BIN_PATH = $(ROOT_DIR)/../../build/ckb-js-vm
 
 all: \
 	cargo_test \
-	default_by_cell \
-	fs_def_cell_module
+	file_system \
+	syscall \
+	fs_bytecode
 
 cargo_test:
 	cargo test
 
-default_by_cell:
-	cargo run --bin default_by_cell > tx.json
-	${CKB_DEBUGGER} --tx-file=tx.json -s lock
-
 build/testdata_fs_modules.bin: test_data/fs_module/main.js test_data/fs_module/fib_module.js
 	cd test_data/fs_module && lua ../../../../tools/fs.lua pack ../../../../$@ main.js fib_module.js
 
-fs_def_cell_module: build/testdata_fs_modules.bin
-	$(CKB_DEBUGGER) --max-cycles $(MAX_CYCLES) --read-file ../../$? --bin $(CKB_JS_VM_BIN_PATH) -- -f -r  2>&1 | fgrep 'Run result: 0'
-
-fs_def_cell_module_bytecode:
+fs_bytecode:
 	mkdir -p ../../build/bytecode
-	$(CKB_DEBUGGER) --read-file test_data/fs_module/main.js --bin $(CKB_JS_VM_BIN_PATH) -- -c | head -n -3 | xxd -r -p > ../../build/bytecode/main.bc
-	$(CKB_DEBUGGER) --read-file test_data/fs_module/fib_module.js --bin $(CKB_JS_VM_BIN_PATH) -- -c | head -n -3 | xxd -r -p > ../../build/bytecode/fib_module.bc
+	$(CKB_DEBUGGER) --read-file test_data/fs_module/main.js --bin $(BIN_PATH) -- -c | awk '/Run result: 0/{exit} {print}' | xxd -r -p > ../../build/bytecode/main.bc
+	$(CKB_DEBUGGER) --read-file test_data/fs_module/fib_module.js --bin $(BIN_PATH) -- -c | awk '/Run result: 0/{exit} {print}' | xxd -r -p > ../../build/bytecode/fib_module.bc
 	cd ../../build/bytecode && lua ../../tools/fs.lua pack ../../build/testdata_fs_modules_bc.bin main.bc fib_module.bc
-	$(CKB_DEBUGGER) --max-cycles $(MAX_CYCLES) --read-file ../../build/testdata_fs_modules_bc.bin --bin $(CKB_JS_VM_BIN_PATH) -- -f -r 2>&1 | fgrep 'Run result: 0'
+	$(CKB_DEBUGGER) --max-cycles $(MAX_CYCLES) --read-file ../../build/testdata_fs_modules_bc.bin --bin $(BIN_PATH) -- -f -r 2>&1 | fgrep 'Run result: 0'
 
-install_ubuntu:
+file_system: build/testdata_fs_modules.bin
+	cargo run --bin default_by_cell | $(CKB_DEBUGGER) -s lock --tx-file=- --read-file ../../$^ -- -f -r  2>&1 | fgrep 'Run result: 0'
+
+syscall:
+	cargo run --bin syscall | $(CKB_DEBUGGER) --tx-file=- -s lock
+
+install-lua:
 	sudo apt install lua5.4
 
 clean:
