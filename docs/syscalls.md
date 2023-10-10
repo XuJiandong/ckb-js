@@ -2,30 +2,58 @@
 
 ## Partial Loading
 
-The functions here may take a variable length of arguments. There is a [partial loading like mechanism](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0009-vm-syscalls/0009-vm-syscalls.md#partial-loading) for functions. Functions below with partial loading supported may be additionally passed to the argument length and offset. The behavior of these JS functions is classified as follows:
+The functions here may take a variable length of arguments. There is a [partial
+loading](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0009-vm-syscalls/0009-vm-syscalls.md#partial-loading)
+for functions. Functions below with partial loading supported may be
+additionally passed to the argument length and offset. The behavior of these JS
+functions is classified as follows:
 
-- Both length and offset are omitted.
-In this case, the whole data would be loaded, e.g. calling `ckb.load_witness(0, ckb.SOURCE_INPUT)` would load the whole witness of input cell of index 0.
-- The offset is omitted, and the length passed is zero.
-In this case, the length of the whole data would be returned, e.g. `ckb.load_witness(0, ckb.SOURCE_INPUT, 0)` will return the length of the witness instead of the witness data.
-- The offset is omitted, and the length passed is non-zero.
-In this case, the initial data of the argument length bytes would be returned, e.g. `ckb.load_witness(0, ckb.SOURCE_INPUT, 10)` will return the initial 10 bytes of witness.
-- Both length and offset are passed, and the length passed is zero.
-In this case, the data length starting from offset would be returned, e.g. calling `ckb.load_witness(0, ckb.SOURCE_INPUT, 0, 10)` would the data length starting from offset 10.
-- Both length and offset are passed, and the length passed is non-zero.
-In this case, the data starting from offset of length would be returned, e.g. calling `ckb.load_witness(0, ckb.SOURCE_INPUT, 2, 10)` would return 2 bytes of data starting from 10.
+- When both the 'length' and 'offset' parameters are omitted, the default
+  behavior is to load the entire data. For instance, invoking the function
+  `ckb.load_witness(0, ckb.SOURCE_INPUT)` would result in the loading of the
+  complete witness data associated with the input cell at index 0.
+
+- When the 'offset' parameter is omitted, and a 'length' of zero is explicitly
+  provided, the function will return the length of the entire data rather than
+  the data itself. For instance, invoking `ckb.load_witness(0, ckb.SOURCE_INPUT,
+  0)` will return the length of the witness, not the actual witness data.
+
+- When the 'offset' parameter is omitted, and a non-zero 'length' is provided,
+  the function will return the initial data consisting of the specified number
+  of bytes. For example, invoking `ckb.load_witness(0, ckb.SOURCE_INPUT, 10)` will
+  retrieve and return the initial 10 bytes of the witness data.
+
+- When both the 'length' and 'offset' parameters are provided, with the 'length'
+  set to zero, the function will return the data length starting from the
+  specified offset. For instance, using the function call `ckb.load_witness(0,
+  ckb.SOURCE_INPUT, 0, 10)` would retrieve the data length starting from offset
+  10.
+
+- When both the 'length' and 'offset' parameters are provided, with the 'length'
+  set to a non-zero value, the function will return the data starting from the
+  specified offset up to the specified length. For example, using the function
+  call `ckb.load_witness(0, ckb.SOURCE_INPUT, 2, 10)` would retrieve 2 bytes of
+  data starting from offset 10.
 
 ## Error Handling
 
-Most of functions may throw exceptions when error occurs. 
+All of the functions are designed to raise exceptions in the event of an error.
 
 ## More Examples
 
-[See CKB syscall test cases](./tests/ckb_js_tests/test_data/syscall.js).
+[See CKB syscall test cases](../tests/ckb_js_tests/test_data/syscall.js).
 
 ## Functions
 
-Note when partial loading support is enabled, the description for arguments length and offset is omitted. You may optionally pass length and offset in that case.
+When partial loading support is enabled, the description of the 'length' and
+'offset' arguments may be omitted. Optionally, you can still pass 'length' and
+'offset' when using functions such as load_witness. Here is an example:
+```js
+let buf = ckb.load_witness(index, source, length, offset);
+```
+Length and offset can be omitted when reading the full data.
+
+All bindings in this document can be found from [source file](../quickjs/ckb_module.c).
 
 #### `ckb.exit`
 Description: exit the ckb-vm execution
@@ -44,14 +72,16 @@ Side effects: exit the ckb-vm execution
 See also: [`ckb_exit` syscall](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0009-vm-syscalls/0009-vm-syscalls.md#exit)
 
 #### `ckb.mount`
-Description: load the cell data and mount the file system specified by `source` and `index`.
+Description: load the cell data and mount the file system specified by `source`
+and `index`.
 
 Example:
 ```js
 ckb.mount(source, index)
 ```
 
-Arguments: source (the source of the cell to load), index (the index of the cell to load within all cells with source `source`)
+Arguments: source (the source of the cell to load), index (the index of the cell
+to load within all cells with source `source`)
 
 Return value(s): None
 
