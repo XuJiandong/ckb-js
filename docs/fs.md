@@ -1,11 +1,11 @@
-# Simple JavaScript File System
+# Simple File System and JavaScript Module
 
-In addition to executing individual JavaScript files, ckb-js-vm also supports JavaScript modules by Simple JavaScript File System, files within the file system may be made available for Javascript to read, import, and execute,
-e.g. import modules by `import { * } from "./module.js";`. Each Simple JavaScript File System contains at least one entry file named `main.js`, and ckb-js-vm will load this file system from any cell and execute `main.js` in it.
+In addition to executing individual JavaScript files, ckb-js-vm also supports JavaScript modules by Simple File System, files within the file system may be made available for Javascript to read, import, and execute,
+e.g. import modules by `import { * } from "./module.js";`. Each Simple File System contains at least one entry file named `main.js`, and ckb-js-vm will load this file system from any cell and execute `main.js` in it.
 
 A file system is represented as a binary file in the format described below. We may use the script [fs.lua](../tools/fs.lua) to create a file system from given files or unpack the file system into files.
 
-## How to create a File System
+## How to create a Simple File System
 
 Consider the following two files:
 
@@ -27,8 +27,8 @@ export function fib(n) {
 }
 ```
 
-If we want ckb-js-vm to execute this code smoothly, we must package them into a file system first. To pack them within the current directory into `$packed_file`, you may run
-`find . -name '*js' -type f | lua "tools/fs.lua" pack "$packed_file"`.
+If we want ckb-js-vm to execute this code smoothly, we must package them into a file system first. To pack them within the current directory into `fib.fs`, you may run
+`find . -name *.js -type f | lua tools/fs.lua pack fib.fs`.
 
 ```
 // Output
@@ -37,10 +37,9 @@ packing file ./main.js to main.js
 ```
 
 Note that all file paths piped into the `fs.lua` must be in the relative path format. The absolute path of a file
-in the current system is usually meaningless in the Simple JavaScript File System. You may also run `lua "tools/fs.lua" pack "$packed_file" *js`. However, the utility of the latter command is limited due to the limit of
-the number of command line arguments in your OS.
+in the current system is usually meaningless in the Simple File System.
 
-## How to deploy and use file system
+## How to deploy and use Simple File System
 
 In most cases, it is more resource-efficient to write all JavaScript code in one file. To enable file system support, we cannot directly use ckb-js-vm as a lock script, ckb-js-vm must be used as an exec Or the spawn target passes the "-f" parameter to it.
 
@@ -61,15 +60,13 @@ We define all JavaScript bytecode files to have a `.bc` extension. When ckb-js-v
 
 In general, we only need to compile all JavaScript files into corresponding bytecode files, and then package the bytecode files just like packaging JavaScript files.
 
-## Unpack File System to Files
+## Unpack Simple File System to Files
 
-To unpack the files contained within a fs, you may run
-`lua "tools/fs.lua" unpack "$packed_file" "$directory"`,
-where `$packed_file` is the file that contains the file system, `$directory` is the directory to put all the unpacked files.
+To unpack the files contained within a fs, you may run `lua tools/fs.lua unpack fib.fs .`.
 
-## Simple JavaScript File System On-disk Representation
+## Simple File System On-disk Representation
 
-The on-disk represention of a Simple JavaScript File System consists of three parts,
+The on-disk represention of a Simple File System consists of three parts,
 a number to represent the number of files contained in this file system, an array of metadata to store file metadata
 and an array of binary objects (also called blob) to store the actual file contents.
 
