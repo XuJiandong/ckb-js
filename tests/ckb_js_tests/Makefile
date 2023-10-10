@@ -12,6 +12,14 @@ all: \
 cargo_test:
 	cargo test
 
+spawn_caller:
+	clang-16 --target=riscv64 -march=rv64imc_zba_zbb_zbc_zbs \
+		-I ../../deps/ckb-c-stdlib/libc -I ../../deps/ckb-c-stdlib \
+		-nostdinc -nostdlib -o ../../build/spawn_caller test_data/spawn_caller.c
+
+module: spawn_caller
+	cargo run --bin module | ${CKB_DEBUGGER} --tx-file=- -s lock
+
 build/testdata_fs_modules.bin: test_data/fs_module/main.js test_data/fs_module/fib_module.js
 	cd test_data/fs_module && lua ../../../../tools/fs.lua pack ../../../../$@ main.js fib_module.js
 
