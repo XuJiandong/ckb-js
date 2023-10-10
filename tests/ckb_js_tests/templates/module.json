@@ -6,7 +6,7 @@
           "capacity": "0x10000000",
           "lock": {
             "args": "0x0000{{ ref_type js-code-file }}01",
-            "code_hash": "0x{{ ref_type exec_caller_from_cell_data }}",
+            "code_hash": "0x{{ ref_type spawn_caller }}",
             "hash_type": "type"
           },
           "type": null
@@ -23,9 +23,9 @@
               "code_hash": "0x0000000000000000000000000000000000000000000000000000000000000000",
               "hash_type": "data1"
           },
-          "type": "{{ def_type exec_caller_from_cell_data }}"
+          "type": "{{ def_type spawn_caller }}"
         },
-        "data": "0x{{ data ../../../build/exec_caller_from_cell_data }}"
+        "data": "0x{{ data ../../../build/spawn_caller }}"
       },
       {
         "output": {
@@ -60,7 +60,7 @@
         "capacity": "0x0",
         "lock": {
           "args": "0x00AE9DF3447C404A645BC48BEA4B7643B95AC5C3AE",
-          "code_hash": "0x{{ ref_type exec_caller_from_cell_data }}",
+          "code_hash": "0x{{ ref_type spawn_caller }}",
           "hash_type": "type"
         }
       }

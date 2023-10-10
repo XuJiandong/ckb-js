@@ -44,14 +44,14 @@ the number of command line arguments in your OS.
 
 In most cases, it is more resource-efficient to write all JavaScript code in one file. To enable file system support, we cannot directly use ckb-js-vm as a lock script, ckb-js-vm must be used as an exec Or the spawn target passes the "-f" parameter to it.
 
-We wrote an example that uses `exec` to call ckb-js-vm to demonstrate how to use the file system.
+We wrote an example that uses `spawn` syscall to call ckb-js-vm to demonstrate how to use the file system.
 
 ```sh
 $ cd tests/ckb_js_tests
 $ make module
 ```
 
-The key is `exec_caller_from_cell_data`, in this example, `exec_caller_from_cell_data` is the real lock script, which then calls ckb-js-vm using `exec` and passes it the `-f` parameter: ckb-js-vm will then run in file system mode.
+The key is `spawn_caller`, in this example, `spawn_caller` is the real lock script, which then calls ckb-js-vm using `spawn` and passes it the `-f` parameter: ckb-js-vm will then run in file system mode.
 
 ## Using JavaScript bytecode to improve performance
 

@@ -12,14 +12,13 @@ all: \
 cargo_test:
 	cargo test
 
-exec_caller_from_cell_data:
+spawn_caller:
 	clang-16 --target=riscv64 -march=rv64imc_zba_zbb_zbc_zbs \
 		-I ../../deps/ckb-c-stdlib/libc -I ../../deps/ckb-c-stdlib \
-		-nostdinc -nostdlib -o ../../build/exec_caller_from_cell_data test_data/exec_caller_from_cell_data.c
+		-nostdinc -nostdlib -o ../../build/spawn_caller test_data/spawn_caller.c
 
-module: exec_caller_from_cell_data
-	cargo run --bin module > tx.json
-	${CKB_DEBUGGER} --tx-file=tx.json -s lock
+module: spawn_caller
+	cargo run --bin module | ${CKB_DEBUGGER} --tx-file=- -s lock
 
 build/testdata_fs_modules.bin: test_data/fs_module/main.js test_data/fs_module/fib_module.js
 	cd test_data/fs_module && lua ../../../../tools/fs.lua pack ../../../../$@ main.js fib_module.js
