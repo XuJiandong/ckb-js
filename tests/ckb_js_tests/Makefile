@@ -12,10 +12,6 @@ all: \
 cargo_test:
 	cargo test
 
-default_by_cell:
-	cargo run --bin default_by_cell > tx.json
-	${CKB_DEBUGGER} --tx-file=tx.json -s lock
-
 exec_caller_from_cell_data:
 	clang-16 --target=riscv64 -march=rv64imc_zba_zbb_zbc_zbs \
 		-I ../../deps/ckb-c-stdlib/libc -I ../../deps/ckb-c-stdlib \
