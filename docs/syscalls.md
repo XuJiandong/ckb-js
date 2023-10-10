@@ -87,7 +87,7 @@ Return value(s): None
 
 Side effects: the files within the file system will be available to use if no error happened
 
-See also: [file system documentation](./fs.md)
+See also: [Simple File System and JavaScript Module](./fs.md)
 
 #### `ckb.load_tx_hash`
 Description: load the transaction hash

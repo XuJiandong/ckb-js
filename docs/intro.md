@@ -54,9 +54,9 @@ Below is an example about how to use it:
 As argument can be very long on ckb-vm(depending on stack size), a very long JavaScript
 code can be executed via this method.
 
-When `-f` is provided, it treats JavaScript code as a file system, rather than a single
-JavaScript code file. JavaScript module is based on file system. See more [file system and
-module](./fs.md).
+When `-f` is provided, it treats JavaScript code as a file system, rather than a
+single JavaScript code file. JavaScript module is based on file system. See more
+[Simple File System and JavaScript Module](./fs.md).
 
 When `-c` is provided, See section below.
 
